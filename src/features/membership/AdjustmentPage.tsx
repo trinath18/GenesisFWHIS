@@ -1,7 +1,7 @@
 ﻿import { Alert, Box, Button, Checkbox, FormControlLabel, MenuItem, Paper, TextField, Typography } from '@mui/material'
 import { useMutation } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
-import { adjustmentApi, type AdjustmentMember, type CancellationQuote, type PlanChangeQuote, type PrincipalAmendment, type SupplementaryQuote } from '../../api/adjustment'
+import { adjustmentApi, type AdjustmentMember, type CancellationQuote, type PlanChangeQuote, type PrincipalAmendment, type SupplementaryCancelQuote, type SupplementaryQuote } from '../../api/adjustment'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { Field, FieldGrid } from '../../components/DataTables'
 import { formatDate, formatMoney } from '../../lib/format'
@@ -112,6 +112,21 @@ export function AdjustmentPage() {
     onError: (e) => { setSpConfirming(false); setMessage({ severity: 'error', text: (e as Error).message }) },
   })
   const spSet = (k: keyof typeof emptySupp) => (e: { target: { value: string } }) => { setSp((x) => ({ ...x, [k]: e.target.value })); setSpQuote(null) }
+  const [sc, setSc] = useState({ cover: '', effective: '', bordx: '', batch: '' })
+  const [scQuote, setScQuote] = useState<SupplementaryCancelQuote | null>(null)
+  const [scConfirming, setScConfirming] = useState(false)
+  const scRequest = () => ({ memberNumber: member!.memberNumber, coverId: sc.cover, effectiveDate: sc.effective || null, endorsementBordxDate: sc.bordx || null, batchNo: sc.batch ? Number(sc.batch) : null })
+  const quoteSc = useMutation({
+    mutationFn: () => adjustmentApi.quoteSupplementaryCancel(scRequest()),
+    onSuccess: (q) => { setScQuote(q); setMessage(null) },
+    onError: (e) => { setScQuote(null); setMessage({ severity: 'error', text: (e as Error).message }) },
+  })
+  const cancelSc = useMutation({
+    mutationFn: () => adjustmentApi.cancelSupplementary(scRequest()),
+    onSuccess: (r) => { setScConfirming(false); setScQuote(null); setMessage({ severity: 'success', text: `Cover ${r.quote.coverId} cancelled.` }); load.mutate() },
+    onError: (e) => { setScConfirming(false); setMessage({ severity: 'error', text: (e as Error).message }) },
+  })
+  const scSet = (k: 'cover' | 'effective' | 'bordx' | 'batch') => (e: { target: { value: string } }) => { setSc((x) => ({ ...x, [k]: e.target.value })); setScQuote(null) }
   const set = (k: keyof Form) => (e: { target: { value: string } }) => setForm((f) => (f ? { ...f, [k]: e.target.value } : f))
   const submit = (e: FormEvent) => { e.preventDefault(); setMessage(null); load.mutate() }
 
@@ -238,6 +253,30 @@ export function AdjustmentPage() {
           )}
         </Paper>
       )}
+      {member && form && (member.insurer?.trim() === 'F' || member.insurer?.trim() === 'H') && member.status !== 'C' && member.status !== 'D' && (
+        <Paper variant="outlined" sx={{ p: 2, display: 'grid', gap: 2, mt: 2 }}>
+          <Typography variant="subtitle1">Cancel supplementary person</Typography>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+            <TextField size="small" label="Cover id to cancel" value={sc.cover} onChange={scSet('cover')} slotProps={{ htmlInput: { maxLength: 2 } }} sx={{ width: 150 }} />
+            <TextField size="small" type="date" label="Supplementary cancel date" value={sc.effective} onChange={scSet('effective')} slotProps={{ inputLabel: { shrink: true } }} />
+            <TextField size="small" type="date" label="Supplementary cancel bordx date" value={sc.bordx} onChange={scSet('bordx')} slotProps={{ inputLabel: { shrink: true } }} />
+            <TextField size="small" type="number" label="Supplementary cancel batch no" value={sc.batch} onChange={scSet('batch')} sx={{ width: 200 }} />
+            <Button variant="outlined" disabled={quoteSc.isPending} onClick={() => { setMessage(null); quoteSc.mutate() }}>Calculate supplementary cancel</Button>
+          </Box>
+          {scQuote && (
+            <>
+              <FieldGrid>
+                <Field label="Covered person" value={scQuote.name} /><Field label="Cover period" value={`${formatDate(scQuote.effectiveDate)} - ${formatDate(scQuote.expiryDate)}`} />
+                <Field label="Premium on file" value={formatMoney(scQuote.premium)} /><Field label="MCO fee on file" value={formatMoney(scQuote.mcoFee)} />
+                <Field label="Refund written" value={scQuote.refundWritten ? 'Yes' : 'No (plan status ' + scQuote.suppMcoStatus + ')'} />
+                <Field label="Premium refund" value={formatMoney(scQuote.refund.premiumReduction)} /><Field label="MCO refund" value={formatMoney(scQuote.refund.mcoRefund)} />
+              </FieldGrid>
+              <Box><Button color="error" variant="contained" onClick={() => setScConfirming(true)} disabled={cancelSc.isPending}>Cancel supplementary person</Button></Box>
+            </>
+          )}
+        </Paper>
+      )}
+      <ConfirmDialog open={scConfirming} busy={cancelSc.isPending} title="Cancel supplementary person" message={`Do you want to cancel cover ${sc.cover} of ${member?.memberNumber} effective ${formatDate(sc.effective)}?`} onConfirm={() => cancelSc.mutate()} onCancel={() => setScConfirming(false)} />
       <ConfirmDialog open={spConfirming} busy={addSp.isPending} title="Add supplementary person" message={`Do you want to add ${sp.name} to ${member?.memberNumber}? The fees shown are recorded.`} onConfirm={() => addSp.mutate()} onCancel={() => setSpConfirming(false)} />
       <ConfirmDialog open={seConfirming} busy={statusEndorse.isPending} title="Confirm endorsement" message={`Do you want to ${seLabel} ${member?.memberNumber}? Covered persons follow the same status.`} onConfirm={() => statusEndorse.mutate()} onCancel={() => setSeConfirming(false)} />
       <ConfirmDialog open={pcConfirming} busy={changePc.isPending} title="Change plan" message={`Do you want to change ${member?.memberNumber} to plan ${pc.plan}? The new fees are recorded and a refund is calculated from ${formatDate(pc.effective)}.`} onConfirm={() => changePc.mutate()} onCancel={() => setPcConfirming(false)} />
@@ -246,6 +285,7 @@ export function AdjustmentPage() {
     </>
   )
 }
+
 
 
 
