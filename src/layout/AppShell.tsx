@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { lookupApi } from '../api/lookups'
 import { summaryApi } from '../api/summary'
 import { trackingApi } from '../api/tracking'
 import { navigation } from '../config/navigation'
@@ -13,8 +14,10 @@ export function AppShell() {
   const items = navigation.filter((n) => can(n.position))
   const tracking = useQuery({ queryKey: ['tracking', 'menu', user?.userId], queryFn: trackingApi.list, enabled: !!user })
   const summaries = useQuery({ queryKey: ['summary', 'menu', user?.userId], queryFn: summaryApi.list, enabled: !!user })
+  const lookups = useQuery({ queryKey: ['lookups', 'menu', user?.userId], queryFn: lookupApi.list, enabled: !!user })
   const entries = [
     ...(tracking.data ?? []).map((t) => ({ ...t, path: `/tracking/${t.id}` })),
+    ...(lookups.data ?? []).map((t) => ({ ...t, path: `/lookups/${t.id}` })),
     ...(summaries.data ?? []).map((t) => ({ ...t, title: `${t.title}`, path: `/summary/${t.id}` })),
   ]
   const trackingByModule = [...entries.reduce((m, t) => m.set(t.module, [...(m.get(t.module) ?? []), t]), new Map<string, typeof entries>())]
@@ -52,6 +55,7 @@ export function AppShell() {
     </Box>
   )
 }
+
 
 
 

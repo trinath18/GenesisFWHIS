@@ -7,7 +7,9 @@ import { LoginPage } from './features/login/LoginPage'
 import { SummaryPage } from './features/tracking/SummaryPage'
 import { TrackingPage } from './features/tracking/TrackingPage'
 import { CaseInquiryPage } from './features/cases/CaseInquiryPage'
+import { LookupPage } from './features/maintenance/LookupPage'
 import { PanelHospitalsPage } from './features/maintenance/PanelHospitalsPage'
+import { ValidDatesPage } from './features/maintenance/ValidDatesPage'
 import { EnquiryPage } from './features/membership/EnquiryPage'
 import { navigation } from './config/navigation'
 
@@ -22,6 +24,7 @@ export default function App() {
           <Route index element={<HomePage />} />
           <Route path="tracking/:id" element={<TrackingPage />} />
           <Route path="summary/:id" element={<SummaryPage />} />
+          <Route path="lookups/:id" element={<LookupPage />} />
           <Route path="forbidden" element={<ForbiddenPage />} />
           <Route element={<RequireScreen position={byPath['/membership/enquiry']} />}>
             <Route path="membership/enquiry" element={<EnquiryPage />} />
@@ -32,6 +35,9 @@ export default function App() {
           <Route element={<RequireScreen position={byPath['/maintenance/panel-hospitals']} />}>
             <Route path="maintenance/panel-hospitals" element={<PanelHospitalsPage />} />
           </Route>
+          <Route element={<RequireScreen position={byPath['/maintenance/valid-dates']} />}>
+            <Route path="maintenance/valid-dates" element={<ValidDatesPage />} />
+          </Route>
           <Route element={<RequireScreen position={byPath['/hospitals']} />}>
             <Route path="hospitals" element={<HospitalsPage />} />
           </Route>
@@ -41,6 +47,7 @@ export default function App() {
     </Routes>
   )
 }
+
 
 
 
