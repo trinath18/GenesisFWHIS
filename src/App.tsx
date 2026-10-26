@@ -7,6 +7,7 @@ import { LoginPage } from './features/login/LoginPage'
 import { SummaryPage } from './features/tracking/SummaryPage'
 import { TrackingPage } from './features/tracking/TrackingPage'
 import { CaseInquiryPage } from './features/cases/CaseInquiryPage'
+import { PanelHospitalsPage } from './features/maintenance/PanelHospitalsPage'
 import { EnquiryPage } from './features/membership/EnquiryPage'
 import { navigation } from './config/navigation'
 
@@ -28,6 +29,9 @@ export default function App() {
           <Route element={<RequireScreen position={byPath['/cases/inquiry']} />}>
             <Route path="cases/inquiry" element={<CaseInquiryPage />} />
           </Route>
+          <Route element={<RequireScreen position={byPath['/maintenance/panel-hospitals']} />}>
+            <Route path="maintenance/panel-hospitals" element={<PanelHospitalsPage />} />
+          </Route>
           <Route element={<RequireScreen position={byPath['/hospitals']} />}>
             <Route path="hospitals" element={<HospitalsPage />} />
           </Route>
@@ -37,6 +41,7 @@ export default function App() {
     </Routes>
   )
 }
+
 
 
 

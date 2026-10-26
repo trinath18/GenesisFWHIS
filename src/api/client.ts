@@ -36,6 +36,10 @@ export const api = {
   get: async <T>(path: string) => (await send(path)).json() as Promise<T>,
   post: async <T>(path: string, body: unknown) =>
     (await send(path, { method: 'POST', body: JSON.stringify(body) })).json() as Promise<T>,
+  put: async <T>(path: string, body: unknown) =>
+    (await send(path, { method: 'PUT', body: JSON.stringify(body) })).json() as Promise<T>,
+  delete: async <T>(path: string) => (await send(path, { method: 'DELETE' })).json() as Promise<T>,
   blob: async (path: string) => (await send(path)).blob(),
 }
+
 
