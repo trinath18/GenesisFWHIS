@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { summaryApi } from '../api/summary'
 import { trackingApi } from '../api/tracking'
 import { navigation } from '../config/navigation'
 
@@ -11,7 +12,12 @@ export function AppShell() {
   const { user, logout, can } = useAuth()
   const items = navigation.filter((n) => can(n.position))
   const tracking = useQuery({ queryKey: ['tracking', 'menu', user?.userId], queryFn: trackingApi.list, enabled: !!user })
-  const trackingByModule = [...(tracking.data ?? []).reduce((m, t) => m.set(t.module, [...(m.get(t.module) ?? []), t]), new Map<string, NonNullable<typeof tracking.data>>())]
+  const summaries = useQuery({ queryKey: ['summary', 'menu', user?.userId], queryFn: summaryApi.list, enabled: !!user })
+  const entries = [
+    ...(tracking.data ?? []).map((t) => ({ ...t, path: `/tracking/${t.id}` })),
+    ...(summaries.data ?? []).map((t) => ({ ...t, title: `${t.title}`, path: `/summary/${t.id}` })),
+  ]
+  const trackingByModule = [...entries.reduce((m, t) => m.set(t.module, [...(m.get(t.module) ?? []), t]), new Map<string, typeof entries>())]
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -33,7 +39,7 @@ export function AppShell() {
             <Box key={module}>
               <ListSubheader disableSticky sx={{ lineHeight: '32px' }}>{module}</ListSubheader>
               {screens?.map((t) => (
-                <ListItemButton key={t.id} component={NavLink} to={`/tracking/${t.id}`} sx={{ py: 0.25 }}><ListItemText primary={t.title} slotProps={{ primary: { variant: 'body2' } }} /></ListItemButton>
+                <ListItemButton key={t.id} component={NavLink} to={t.path} sx={{ py: 0.25 }}><ListItemText primary={t.title} slotProps={{ primary: { variant: 'body2' } }} /></ListItemButton>
               ))}
             </Box>
           ))}
@@ -46,5 +52,7 @@ export function AppShell() {
     </Box>
   )
 }
+
+
 
 
