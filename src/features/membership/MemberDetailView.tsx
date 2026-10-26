@@ -1,60 +1,35 @@
 import { Alert, Box, Chip, CircularProgress, Paper, Tab, Tabs, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { membershipApi, type MemberAccountHistoryItem, type MemberAccountSummary, type MemberAmendment, type MemberCase, type MemberDetail, type MemberNote } from '../../api/membership'
+import { membershipApi, type MemberDetail } from '../../api/membership'
+import { download, safeFileName } from '../../lib/download'
 import { formatDate, formatMoney } from '../../lib/format'
-import { Field, FieldGrid, QueryTable, type Column } from './components'
+import { Field, FieldGrid } from './components'
+import {
+  AccountHistoryTab,
+  AccountTab,
+  AmendmentsTab,
+  BenefitsTab,
+  CaseHistoryTab,
+  CasesTab,
+  FeesTab,
+  LifetimeLimitTab,
+  MemberHistoryTab,
+  NonDisclosureTab,
+  NotesTab,
+  PolicyTermsTab,
+  PolicyWordingTab,
+  PrintButton,
+  SupplementaryTab,
+  TakeoverClaimsTab,
+} from './MemberTabs'
 
-const tabs = ['Details', 'Current Case', 'Case History', 'Adjust History', 'Account', 'Acc History', 'Notes'] as const
-
-const caseColumns: Column<MemberCase>[] = [
-  { header: 'Case No', cell: (c) => c.caseNumber },
-  { header: 'Member No', cell: (c) => c.memberNumber },
-  { header: 'Patient', cell: (c) => c.patientName },
-  { header: 'Rel', cell: (c) => c.relationship },
-  { header: 'Admitted', cell: (c) => formatDate(c.admitted) },
-  { header: 'Discharged', cell: (c) => formatDate(c.discharged) },
-  { header: 'Claimability', cell: (c) => c.claimability },
-  { header: 'Diagnosis', cell: (c) => c.diagnosis },
-  { header: 'Status', cell: (c) => c.status },
-  { header: 'Hospital', cell: (c) => c.hospital },
-  { header: 'Payor', cell: (c) => c.payorCode },
-]
-
-const amendmentColumns: Column<MemberAmendment>[] = [
-  { header: 'Bordx Date', cell: (a) => formatDate(a.bordxDate) || '-' },
-  { header: 'Batch', cell: (a) => a.batchNo },
-  { header: 'Amend Date', cell: (a) => formatDate(a.amendDate) },
-  { header: 'Type', cell: (a) => a.type },
-  { header: 'Effective Date', cell: (a) => formatDate(a.effectiveDate) },
-]
-
-const summaryColumns: Column<MemberAccountSummary>[] = [
-  { header: 'Cover ID', cell: (s) => s.coverId },
-  { header: 'Approved', align: 'right', cell: (s) => formatMoney(s.totalApproved) },
-  { header: 'Payable to Hosp', align: 'right', cell: (s) => formatMoney(s.totalPayableToHospital) },
-  { header: 'Paid to Hosp', align: 'right', cell: (s) => formatMoney(s.totalPaidToHospital) },
-  { header: 'Payable to Member', align: 'right', cell: (s) => formatMoney(s.totalPayableToMember) },
-  { header: 'Paid by Member', align: 'right', cell: (s) => formatMoney(s.totalPaidByMember) },
-  { header: 'Paid to Member', align: 'right', cell: (s) => formatMoney(s.totalPaidToMember) },
-  { header: 'Reimburse', align: 'right', cell: (s) => formatMoney(s.totalReimburse) },
-  { header: 'Excess', align: 'right', cell: (s) => formatMoney(s.totalExcess) },
-]
-
-const historyColumns: Column<MemberAccountHistoryItem>[] = [
-  { header: 'Member No', cell: (h) => h.memberNumber },
-  { header: 'Payor Eff', cell: (h) => formatDate(h.payorEffDate) },
-  { header: 'Admitted', cell: (h) => formatDate(h.admitted) },
-  { header: 'Case Reg', cell: (h) => formatDate(h.caseRegistered) },
-  { header: 'Case', cell: (h) => h.caseReference },
-  { header: 'DN/CN Ref', cell: (h) => h.debitCreditRef },
-  { header: 'DN/CN Date', cell: (h) => formatDate(h.debitCreditDate) },
-  { header: 'Payable', align: 'right', cell: (h) => formatMoney(h.payableByMedix) },
-  { header: 'Receipt No', cell: (h) => h.receiptNo },
-  { header: 'Receipt Date', cell: (h) => formatDate(h.receiptDate) },
-  { header: 'Receipt Amt', align: 'right', cell: (h) => formatMoney(h.receiptAmount) },
-  { header: 'Total', align: 'right', cell: (h) => formatMoney(h.payableByMedix + h.receiptAmount) },
-]
+/** Same order as the legacy SSTab1 tabs. */
+const tabs = [
+  'Details', 'Supplementary', 'Adjust History', 'Benefits', 'Current Case', 'Case History', 'Member History', 'Account',
+  'Account History', 'Fees', 'Non Disclosure', 'Policy Terms', 'LT Limit', 'Policy Wording', 'T/O Claims', 'Notes',
+] as const
+type TabName = (typeof tabs)[number]
 
 function DetailsTab({ m }: { m: MemberDetail }) {
   return (
@@ -116,30 +91,45 @@ function DetailsTab({ m }: { m: MemberDetail }) {
   )
 }
 
-function Notes({ title, query, empty }: { title: string; query: ReturnType<typeof useQuery<MemberNote[]>>; empty: string }) {
-  return (
-    <Box sx={{ mb: 3 }}>
-      <Typography variant="subtitle2" gutterBottom>{title}</Typography>
-      <QueryTable query={query} empty={empty} columns={[{ header: 'Member No', cell: (n) => n.memberNumber }, { header: 'Text', cell: (n) => n.text }]} />
-    </Box>
-  )
+function renderTab(tab: TabName, m: MemberDetail) {
+  const n = m.number
+  switch (tab) {
+    case 'Details': return <DetailsTab m={m} />
+    case 'Supplementary': return <SupplementaryTab number={n} insurerCode={m.insurerCode} />
+    case 'Adjust History': return <AmendmentsTab number={n} />
+    case 'Benefits': return <BenefitsTab number={n} />
+    case 'Current Case': return <CasesTab number={n} />
+    case 'Case History': return <CaseHistoryTab number={n} />
+    case 'Member History': return <MemberHistoryTab number={n} />
+    case 'Account': return <AccountTab number={n} />
+    case 'Account History': return <AccountHistoryTab number={n} />
+    case 'Fees': return <FeesTab number={n} />
+    case 'Non Disclosure': return <NonDisclosureTab number={n} />
+    case 'Policy Terms': return <PolicyTermsTab number={n} />
+    case 'LT Limit': return <LifetimeLimitTab number={n} />
+    case 'Policy Wording': return <PolicyWordingTab number={n} />
+    case 'T/O Claims': return <TakeoverClaimsTab number={n} />
+    case 'Notes': return <NotesTab number={n} specialNote={m.planSpecialNote} />
+  }
 }
 
 export function MemberDetailView({ number }: { number: string }) {
   const [tab, setTab] = useState(0)
+  const [printError, setPrintError] = useState<string | null>(null)
   const member = useQuery({ queryKey: ['member', number], queryFn: () => membershipApi.get(number) })
-  const active = tabs[tab]
-  const cases = useQuery({ queryKey: ['member', number, 'cases'], queryFn: () => membershipApi.cases(number), enabled: active === 'Current Case' })
-  const caseHistory = useQuery({ queryKey: ['member', number, 'case-history'], queryFn: () => membershipApi.caseHistory(number), enabled: active === 'Case History' })
-  const amendments = useQuery({ queryKey: ['member', number, 'amendments'], queryFn: () => membershipApi.amendments(number), enabled: active === 'Adjust History' })
-  const summary = useQuery({ queryKey: ['member', number, 'account-summary'], queryFn: () => membershipApi.accountSummary(number), enabled: active === 'Account' })
-  const history = useQuery({ queryKey: ['member', number, 'account-history'], queryFn: () => membershipApi.accountHistory(number), enabled: active === 'Acc History' })
-  const exclusions = useQuery({ queryKey: ['member', number, 'exclusions'], queryFn: () => membershipApi.exclusions(number), enabled: active === 'Notes' })
-  const remarks = useQuery({ queryKey: ['member', number, 'remarks'], queryFn: () => membershipApi.remarks(number), enabled: active === 'Notes' })
 
   if (member.isLoading) return <CircularProgress />
   if (member.error) return <Alert severity="error">{(member.error as Error).message}</Alert>
   const m = member.data!
+
+  const print = async (kind: 'enquiry.pdf' | 'exclusion-form.xlsx' | 'history.xlsx') => {
+    setPrintError(null)
+    try {
+      download(await membershipApi.print(m.number, kind), `member-${safeFileName(m.number)}-${kind}`)
+    } catch (e) {
+      setPrintError(e instanceof Error ? e.message : 'Print failed')
+    }
+  }
 
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
@@ -150,22 +140,16 @@ export function MemberDetailView({ number }: { number: string }) {
         {m.expiredStatus === 'Y' && <Chip size="small" label="Expired" color="warning" />}
         {m.reinstated && <Chip size="small" label="Reinstated" />}
         {m.topUp && <Chip size="small" label="Top-up" />}
+        <Box sx={{ flexGrow: 1 }} />
+        <PrintButton label="Print" onClick={() => print('enquiry.pdf')} />
+        <PrintButton label="Print 2 (Excel)" onClick={() => print('exclusion-form.xlsx')} />
+        <PrintButton label="Print History (Excel)" onClick={() => print('history.xlsx')} />
       </Box>
+      {printError && <Alert severity="error" sx={{ mb: 1 }}>{printError}</Alert>}
       <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ mb: 2 }}>
         {tabs.map((t) => <Tab key={t} label={t} />)}
       </Tabs>
-      {active === 'Details' && <DetailsTab m={m} />}
-      {active === 'Current Case' && <QueryTable query={cases} columns={caseColumns} empty="No current cases." />}
-      {active === 'Case History' && <QueryTable query={caseHistory} columns={caseColumns} empty="No case history for this member's IC." />}
-      {active === 'Adjust History' && <QueryTable query={amendments} columns={amendmentColumns} empty="No adjustments." />}
-      {active === 'Account' && <QueryTable query={summary} columns={summaryColumns} empty="No account summary." />}
-      {active === 'Acc History' && <QueryTable query={history} columns={historyColumns} empty="No account history." />}
-      {active === 'Notes' && (
-        <>
-          <Notes title="Exclusions" query={exclusions} empty="No exclusions." />
-          <Notes title="Remarks" query={remarks} empty="No remarks." />
-        </>
-      )}
+      {renderTab(tabs[tab], m)}
     </Paper>
   )
 }

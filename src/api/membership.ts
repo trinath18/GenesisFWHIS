@@ -1,4 +1,4 @@
-import { api } from './client'
+﻿import { api } from './client'
 
 export interface MemberSearchResult {
   number: string
@@ -132,6 +132,132 @@ export interface MemberNote {
   text: string
 }
 
+export interface CoveredPerson {
+  coverId: string
+  name: string | null
+  icBcPp: string | null
+  dateOfBirth: string | null
+  sex: string | null
+  adultChild: string | null
+  relationship: string | null
+  status: string | null
+  planCode: string | null
+  memberType: string | null
+  annualLimit: number | null
+  availableLimit: number | null
+  effectiveDate: string | null
+  expiryDate: string | null
+  cancelDate: string | null
+  premium: number | null
+  bordxDate: string | null
+  batchNo: number | null
+}
+
+export interface BenefitItem {
+  code: string
+  description: string | null
+  noOfDays: number
+  claimableAmount: string | null
+  rmPerDisability: string | null
+}
+
+export interface BenefitListing {
+  planCode: string | null
+  effectiveDate: string | null
+  items: BenefitItem[]
+}
+
+export interface MemberBenefits {
+  principal: BenefitListing
+  supplementary: BenefitListing[]
+}
+
+export interface MemberHistoryItem {
+  memberNumber: string
+  coverId: string | null
+  topupInd: string | null
+  topupNumber: string | null
+  policyNo: string | null
+  payorEffDate: string | null
+  payorExpDate: string | null
+  dataStatus: string | null
+  status: string | null
+  bordxDate: string | null
+}
+
+export interface MemberHistory {
+  byIc: MemberHistoryItem[]
+  byNameDob: MemberHistoryItem[]
+  countsDiffer: boolean
+}
+
+export interface MemberCaseHistory {
+  byIc: MemberCase[]
+  byNameDob: MemberCase[]
+  countsDiffer: boolean
+}
+
+export interface MemberFees {
+  premium: number | null
+  mcoFee: number | null
+  accessFee: number | null
+  basicPremium: number | null
+  basicMco: number | null
+  payorMco: number | null
+  billedMco: number | null
+}
+
+export interface NonDisclosureItem {
+  memberNumber: string
+  caseNumber: string | null
+  coverId: string | null
+  admitted: string | null
+  preIllnessDate: string | null
+  preIllnessCategory: string | null
+  preIllnessInformedBy: string | null
+  underlyingIllnessDate: string | null
+  underlyingIllnessCategory: string | null
+  underlyingIllnessInformedBy: string | null
+}
+
+export interface PolicyTerm {
+  name: string
+  value: string | null
+}
+
+export interface LifetimeLimitRow {
+  memberNumber: string
+  coverId: string | null
+  name: string | null
+  availableLimit: number
+  balance: number
+  currentCases: number
+  historyCases: number
+  currentBordxAmount: number
+  historyBordxAmount: number
+}
+
+export interface TakeoverClaim {
+  effectiveDate: string | null
+  expiryDate: string | null
+  patientName: string | null
+  patientIc: string | null
+  admitted: string | null
+  discharged: string | null
+  hospital: string | null
+  diagnosis: string | null
+  doctors: string | null
+  billAmount: number | null
+  approvedAmount: number | null
+  excessAmount: number | null
+}
+
+export interface PolicyWordingListing {
+  folder: string | null
+  storeConfigured: boolean
+  files: { name: string; size: number }[]
+}
+
 const base = (n: string) => `/api/membership/members/${encodeURIComponent(n)}`
 
 export const membershipApi = {
@@ -139,9 +265,21 @@ export const membershipApi = {
   get: (n: string) => api.get<MemberDetail>(base(n)),
   amendments: (n: string) => api.get<MemberAmendment[]>(`${base(n)}/amendments`),
   cases: (n: string) => api.get<MemberCase[]>(`${base(n)}/cases`),
-  caseHistory: (n: string) => api.get<MemberCase[]>(`${base(n)}/case-history`),
+  caseHistory: (n: string) => api.get<MemberCaseHistory>(`${base(n)}/case-history`),
+  coveredPersons: (n: string) => api.get<CoveredPerson[]>(`${base(n)}/covered-persons`),
+  benefits: (n: string) => api.get<MemberBenefits>(`${base(n)}/benefits`),
+  memberHistory: (n: string) => api.get<MemberHistory>(`${base(n)}/member-history`),
+  fees: (n: string) => api.get<MemberFees>(`${base(n)}/fees`),
+  nonDisclosure: (n: string) => api.get<NonDisclosureItem[]>(`${base(n)}/non-disclosure`),
+  policyTerms: (n: string) => api.get<PolicyTerm[]>(`${base(n)}/policy-terms`),
+  lifetimeLimit: (n: string) => api.get<LifetimeLimitRow[]>(`${base(n)}/lifetime-limit`),
+  takeoverClaims: (n: string) => api.get<TakeoverClaim[]>(`${base(n)}/takeover-claims`),
+  policyWording: (n: string) => api.get<PolicyWordingListing>(`${base(n)}/policy-wording`),
+  policyWordingFile: (n: string, file: string) => api.blob(`${base(n)}/policy-wording/${encodeURIComponent(file)}`),
+  print: (n: string, kind: 'enquiry.pdf' | 'exclusion-form.xlsx' | 'history.xlsx') => api.blob(`${base(n)}/print/${kind}`),
   accountSummary: (n: string) => api.get<MemberAccountSummary[]>(`${base(n)}/account-summary`),
   accountHistory: (n: string) => api.get<MemberAccountHistoryItem[]>(`${base(n)}/account-history`),
   exclusions: (n: string) => api.get<MemberNote[]>(`${base(n)}/exclusions`),
   remarks: (n: string) => api.get<MemberNote[]>(`${base(n)}/remarks`),
 }
+

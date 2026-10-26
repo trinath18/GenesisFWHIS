@@ -1,16 +1,8 @@
-import { Alert, Box, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
+﻿import { Alert, Box, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { hospitalsApi } from '../../api/hospitals'
-
-function download(blob: Blob, name: string) {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = name
-  a.click()
-  URL.revokeObjectURL(url)
-}
+import { download } from '../../lib/download'
 
 export function HospitalsPage() {
   const [input, setInput] = useState('')
@@ -62,3 +54,4 @@ export function HospitalsPage() {
     </>
   )
 }
+

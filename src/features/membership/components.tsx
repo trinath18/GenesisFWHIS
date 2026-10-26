@@ -1,4 +1,4 @@
-import { Alert, Box, CircularProgress, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material'
+﻿import { Alert, Box, CircularProgress, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material'
 import type { UseQueryResult } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 
@@ -21,11 +21,8 @@ export interface Column<T> {
   align?: 'right'
 }
 
-/** Renders the loading, error and "no records" states for a tab, then a table. */
-export function QueryTable<T>({ query, columns, empty = 'No records.' }: { query: UseQueryResult<T[]>; columns: Column<T>[]; empty?: string }) {
-  if (query.isLoading) return <CircularProgress size={24} />
-  if (query.error) return <Alert severity="error">{(query.error as Error).message}</Alert>
-  const rows = query.data ?? []
+/** A table of already-loaded rows, with an empty-state message. */
+export function RowsTable<T>({ rows, columns, empty = 'No records.' }: { rows: T[]; columns: Column<T>[]; empty?: string }) {
   if (rows.length === 0) return <Typography color="text.secondary">{empty}</Typography>
   return (
     <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 420 }}>
@@ -41,4 +38,11 @@ export function QueryTable<T>({ query, columns, empty = 'No records.' }: { query
       </Table>
     </TableContainer>
   )
+}
+
+/** Renders the loading and error states for a tab, then the rows. */
+export function QueryTable<T>({ query, columns, empty }: { query: UseQueryResult<T[]>; columns: Column<T>[]; empty?: string }) {
+  if (query.isLoading) return <CircularProgress size={24} />
+  if (query.error) return <Alert severity="error">{(query.error as Error).message}</Alert>
+  return <RowsTable rows={query.data ?? []} columns={columns} empty={empty} />
 }
