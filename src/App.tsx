@@ -1,9 +1,10 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+﻿import { Navigate, Route, Routes } from 'react-router-dom'
 import { RequireAuth, RequireScreen } from './auth/RequireAuth'
 import { AppShell } from './layout/AppShell'
 import { ForbiddenPage, HomePage } from './features/home/HomePage'
 import { HospitalsPage } from './features/hospitals/HospitalsPage'
 import { LoginPage } from './features/login/LoginPage'
+import { EnquiryPage } from './features/membership/EnquiryPage'
 import { navigation } from './config/navigation'
 
 const byPath = Object.fromEntries(navigation.map((n) => [n.path, n.position]))
@@ -16,6 +17,9 @@ export default function App() {
         <Route element={<AppShell />}>
           <Route index element={<HomePage />} />
           <Route path="forbidden" element={<ForbiddenPage />} />
+          <Route element={<RequireScreen position={byPath['/membership/enquiry']} />}>
+            <Route path="membership/enquiry" element={<EnquiryPage />} />
+          </Route>
           <Route element={<RequireScreen position={byPath['/hospitals']} />}>
             <Route path="hospitals" element={<HospitalsPage />} />
           </Route>
@@ -25,3 +29,4 @@ export default function App() {
     </Routes>
   )
 }
+

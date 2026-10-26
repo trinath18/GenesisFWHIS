@@ -5,7 +5,7 @@ React 19 + TypeScript + Vite + MUI + TanStack Query. Web front end for the Genes
 ## Run locally
 ```
 npm install
-npm run dev      # http://localhost:5173, proxies /api to http://localhost:5000
+npm run dev      # http://localhost:5180, proxies /api to http://localhost:5000
 npm test         # vitest
 npm run build
 ```
