@@ -14,8 +14,10 @@ export const navigation: NavItem[] = [
   { path: '/maintenance/panel-hospitals', label: 'Panel Hospital Maintenance', position: 1 },
   { path: '/maintenance/valid-dates', label: 'Member Date Ranges', position: 109 },
   { path: '/maintenance/suspensions', label: 'Suspension', position: 110 },
+  { path: '/membership/card-sending', label: 'Card Sending Mode', position: 1 },
   { path: '/hospitals', label: 'Hospitals (report demo)', position: 3 },
 ]
+
 
 
 
