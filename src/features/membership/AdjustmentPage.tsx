@@ -92,14 +92,14 @@ export function AdjustmentPage() {
     },
     onError: (e) => { setSeConfirming(false); setMessage({ severity: 'error', text: (e as Error).message }) },
   })
-  const emptySupp = { name: '', salutation: '', ic: '', dob: '', sex: '', rel: '', allergies: '', exclusion: '', plan: '', effective: '', bordx: '', batch: '', renew: '', policy: '' }
+  const emptySupp = { name: '', salutation: '', ic: '', dob: '', sex: '', rel: '', allergies: '', exclusion: '', plan: '', effective: '', bordx: '', batch: '', renew: '', policy: '', guarantee: '' }
   const [sp, setSp] = useState(emptySupp)
   const [spQuote, setSpQuote] = useState<SupplementaryQuote | null>(null)
   const [spConfirming, setSpConfirming] = useState(false)
   const spRequest = () => ({
     memberNumber: member!.memberNumber, name: sp.name, salutation: sp.salutation || null, icBcPp: sp.ic, dateOfBirth: sp.dob || null, sex: sp.sex, relationship: sp.rel, allergies: sp.allergies || null,
     exclusion: sp.exclusion || null, supplementaryPlan: sp.plan || null, effectiveDate: sp.effective || null, endorsementBordxDate: sp.bordx || null, batchNo: sp.batch ? Number(sp.batch) : null,
-    renewalDiscount: sp.renew ? Number(sp.renew) : null, policyDiscount: sp.policy ? Number(sp.policy) : null,
+    renewalDiscount: sp.renew ? Number(sp.renew) : null, policyDiscount: sp.policy ? Number(sp.policy) : null, guaranteeRenewal: sp.guarantee || null,
   })
   const quoteSp = useMutation({
     mutationFn: () => adjustmentApi.quoteSupplementary(spRequest()),
@@ -249,6 +249,7 @@ export function AdjustmentPage() {
             <TextField size="small" label="Supplementary plan (if different)" value={sp.plan} onChange={spSet('plan')} slotProps={{ htmlInput: { maxLength: 4 } }} />
             <TextField size="small" type="number" label="Renewal discount %" value={sp.renew} onChange={spSet('renew')} />
             <TextField size="small" type="number" label="Policy discount %" value={sp.policy} onChange={spSet('policy')} />
+            <TextField select size="small" label="Guarantee renewal (lifetime plans)" value={sp.guarantee} onChange={spSet('guarantee')}><MenuItem value="">(none)</MenuItem><MenuItem value="1">1 - No Life Time Limit</MenuItem><MenuItem value="3">3 - With Life Time Limit</MenuItem></TextField>
           </Box>
           <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
             <TextField size="small" type="date" label="Supplementary effective date" value={sp.effective} onChange={spSet('effective')} slotProps={{ inputLabel: { shrink: true } }} />
@@ -262,6 +263,8 @@ export function AdjustmentPage() {
                 <Field label="Cover id" value={spQuote.coverId} /><Field label="Age / band" value={`${spQuote.ageText} / ${spQuote.ageCode}`} /><Field label="Plan" value={spQuote.plan} />
                 <Field label="Cover period" value={`${formatDate(spQuote.effectiveDate)} - ${formatDate(spQuote.expiryDate)}`} /><Field label="Annual limit" value={formatMoney(spQuote.annualLimit)} />
                 <Field label="Premium" value={formatMoney(spQuote.premium)} /><Field label="MCO fee" value={formatMoney(spQuote.mco)} />
+                {spQuote.benefitLimits && <Field label="Benefit limits (kidney / cancer / home)" value={`${formatMoney(spQuote.benefitLimits.kidney)} / ${formatMoney(spQuote.benefitLimits.cancer)} / ${formatMoney(spQuote.benefitLimits.homeNursing)}`} />}
+                {spQuote.lifetimeLimit && <Field label="Lifetime limit" value={formatMoney(spQuote.lifetimeLimit.limit)} />}
               </FieldGrid>
               <Box><Button variant="contained" onClick={() => setSpConfirming(true)} disabled={addSp.isPending}>Add supplementary person</Button></Box>
             </>
@@ -324,6 +327,7 @@ export function AdjustmentPage() {
     </>
   )
 }
+
 
 
 

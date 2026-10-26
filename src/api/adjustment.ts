@@ -29,11 +29,11 @@ export interface StatusEndorsementResult { memberNumber: string; type: string; p
 
 export interface SupplementaryRequest {
   memberNumber: string; name: string; salutation: string | null; icBcPp: string; dateOfBirth: string | null; sex: string; relationship: string; allergies: string | null; exclusion: string | null
-  supplementaryPlan: string | null; effectiveDate: string | null; endorsementBordxDate: string | null; batchNo: number | null; renewalDiscount: number | null; policyDiscount: number | null
+  supplementaryPlan: string | null; effectiveDate: string | null; endorsementBordxDate: string | null; batchNo: number | null; renewalDiscount: number | null; policyDiscount: number | null; guaranteeRenewal: string | null
 }
 export interface SupplementaryQuote {
   memberNumber: string; coverId: string; name: string; ageText: string; ageCode: string; adultChild: string; plan: string; effectiveDate: string; expiryDate: string
-  annualLimit: number; basicPremium: number; premium: number; basicMco: number; mco: number; suppLimitStatus: string; suppMcoStatus: string; suppPremiumStatus: string
+  annualLimit: number; basicPremium: number; premium: number; basicMco: number; mco: number; suppLimitStatus: string; suppMcoStatus: string; suppPremiumStatus: string; benefitLimits: { kidney: number; cancer: number; homeNursing: number; benefitStatus: string } | null; lifetimeLimit: { memberNumber: string; limit: number } | null
 }
 
 export interface SupplementaryCancelRequest { memberNumber: string; coverId: string; effectiveDate: string | null; endorsementBordxDate: string | null; batchNo: number | null }
@@ -64,6 +64,7 @@ export const adjustmentApi = {
   deleteSupplementary: (r: SupplementaryDeleteRequest) => api.post<{ quote: SupplementaryDeleteQuote; rowsDeleted: number }>(`${base}/supplementary/delete`, r),
   amend: (a: PrincipalAmendment) => api.put<AmendmentResult>(`${base}/amendment`, a),
 }
+
 
 
 
