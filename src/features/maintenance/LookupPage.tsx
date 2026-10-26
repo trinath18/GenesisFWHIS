@@ -1,4 +1,4 @@
-﻿import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
+﻿import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
@@ -47,12 +47,12 @@ function LookupTable({ meta }: { meta: LookupMeta }) {
       <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: '65vh' }}>
         <Table size="small" stickyHeader>
           <TableHead>
-            <TableRow>{meta.fields.map((f) => <TableCell key={f.key}>{f.label}</TableCell>)}<TableCell align="right">Actions</TableCell></TableRow>
+            <TableRow>{meta.fields.map((f) => <TableCell key={f.key} align={f.kind === 'Money' ? 'right' : 'left'}>{f.label}</TableCell>)}<TableCell align="right">Actions</TableCell></TableRow>
           </TableHead>
           <TableBody>
             {(rows.data ?? []).map((row) => (
               <TableRow key={row.key} hover>
-                {meta.fields.map((f) => <TableCell key={f.key}>{row.values[f.key]}</TableCell>)}
+                {meta.fields.map((f) => <TableCell key={f.key} align={f.kind === 'Money' ? 'right' : 'left'} sx={f.multiline ? { maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } : undefined}>{f.kind === 'Money' && row.values[f.key] ? Number(row.values[f.key]).toLocaleString('en-US', { minimumFractionDigits: 2 }) : row.values[f.key]}</TableCell>)}
                 <TableCell align="right">
                   <Button size="small" onClick={() => { setMessage(null); setEditing({ mode: 'edit', row }) }}>Edit</Button>
                   {meta.allowDelete && <Button size="small" color="error" onClick={() => setDeleting(row)}>Delete</Button>}
@@ -96,12 +96,16 @@ function RecordDialog({ meta, editing, onClose, onSaved }: { meta: LookupMeta; e
         <DialogTitle>{editing.mode === 'add' ? 'Add' : 'Edit'} - {meta.title}</DialogTitle>
         <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
           {error && <Alert severity="error">{error}</Alert>}
-          {meta.fields.map((f) => (
+          {meta.fields.filter((f) => !(f.isKey && meta.keyIsIdentity && editing.mode === 'add')).map((f) => (
             <TextField
               key={f.key} label={f.label} required={f.required} size="small" value={values[f.key] ?? ''}
-              disabled={f.isKey && editing.mode === 'edit'} slotProps={{ htmlInput: { maxLength: f.maxLength } }}
+              select={f.kind === 'Choice'} multiline={f.multiline} minRows={f.multiline ? 3 : undefined}
+              disabled={f.isKey && editing.mode === 'edit'}
+              slotProps={{ htmlInput: { maxLength: f.kind === 'Choice' ? undefined : f.maxLength, inputMode: f.kind === 'Money' ? 'decimal' : undefined } }}
               onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
-            />
+            >
+              {f.kind === 'Choice' && [<MenuItem key="" value="">(none)</MenuItem>, ...(f.choices ?? []).map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)]}
+            </TextField>
           ))}
         </DialogContent>
         <DialogActions>
@@ -113,3 +117,4 @@ function RecordDialog({ meta, editing, onClose, onSaved }: { meta: LookupMeta; e
     </>
   )
 }
+

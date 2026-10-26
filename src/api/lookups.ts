@@ -1,8 +1,8 @@
 ﻿import { api } from './client'
 import type { TrackingSummary } from './tracking'
 
-export interface LookupField { key: string; label: string; maxLength: number; required: boolean; isKey: boolean }
-export interface LookupMeta { id: string; title: string; module: string; allowDelete: boolean; fields: LookupField[] }
+export interface LookupField { key: string; label: string; maxLength: number; required: boolean; isKey: boolean; kind: 'Text' | 'Money' | 'Choice'; choices: string[] | null; multiline: boolean }
+export interface LookupMeta { id: string; title: string; module: string; allowDelete: boolean; keyIsIdentity: boolean; fields: LookupField[] }
 export interface LookupRow { key: string; values: Record<string, string | null> }
 
 const rows = (id: string) => `/api/lookups/${id}/rows`
@@ -15,3 +15,4 @@ export const lookupApi = {
   update: (id: string, key: string, values: Record<string, string>) => api.put<LookupRow>(`${rows(id)}?key=${encodeURIComponent(key)}`, values),
   remove: (id: string, key: string) => api.delete<{ deleted: string }>(`${rows(id)}?key=${encodeURIComponent(key)}`),
 }
+
