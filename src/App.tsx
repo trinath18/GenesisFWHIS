@@ -13,6 +13,7 @@ import { SuspensionsPage } from './features/maintenance/SuspensionsPage'
 import { ValidDatesPage } from './features/maintenance/ValidDatesPage'
 import { CardSendingPage } from './features/membership/CardSendingPage'
 import { EnquiryPage } from './features/membership/EnquiryPage'
+import { MemberDeletionPage } from './features/membership/MemberDeletionPage'
 import { McoPendingPage } from './features/membership/McoPendingPage'
 import { navigation } from './config/navigation'
 
@@ -50,6 +51,9 @@ export default function App() {
           <Route element={<RequireScreen position={byPath['/membership/mco-pending']} />}>
             <Route path="membership/mco-pending" element={<McoPendingPage />} />
           </Route>
+          <Route element={<RequireScreen position={byPath['/membership/deletion']} />}>
+            <Route path="membership/deletion" element={<MemberDeletionPage />} />
+          </Route>
           <Route element={<RequireScreen position={byPath['/hospitals']} />}>
             <Route path="hospitals" element={<HospitalsPage />} />
           </Route>
@@ -59,6 +63,7 @@ export default function App() {
     </Routes>
   )
 }
+
 
 
 
