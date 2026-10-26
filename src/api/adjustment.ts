@@ -24,6 +24,9 @@ export interface PlanChangeQuote {
 }
 export interface PlanChangeResult { quote: PlanChangeQuote; crossReferenceUpdated: boolean }
 
+export interface StatusEndorsementRequest { memberNumber: string; type: string; effectiveDate: string | null; endorsementBordxDate: string | null; batchNo: number | null }
+export interface StatusEndorsementResult { memberNumber: string; type: string; previousStatus: string; newStatus: string; coveredPersonsUpdated: number; crossReferenceUpdated: boolean }
+
 const base = '/api/membership/adjustment'
 
 export const adjustmentApi = {
@@ -32,7 +35,9 @@ export const adjustmentApi = {
   cancel: (r: CancellationRequest) => api.post<CancellationResult>(`${base}/cancellation`, r),
   quotePlanChange: (r: PlanChangeRequest) => api.post<PlanChangeQuote>(`${base}/plan-change/quote`, r),
   changePlan: (r: PlanChangeRequest) => api.post<PlanChangeResult>(`${base}/plan-change`, r),
+  statusEndorsement: (r: StatusEndorsementRequest) => api.post<StatusEndorsementResult>(`${base}/status-endorsement`, r),
   amend: (a: PrincipalAmendment) => api.put<AmendmentResult>(`${base}/amendment`, a),
 }
+
 
 

@@ -80,6 +80,18 @@ export function AdjustmentPage() {
     onError: (e) => { setPcConfirming(false); setMessage({ severity: 'error', text: (e as Error).message }) },
   })
   const pcSet = (k: 'plan' | 'effective' | 'bordx' | 'batch') => (e: { target: { value: string } }) => { setPc((x) => ({ ...x, [k]: e.target.value })); setPcQuote(null) }
+  const [se, setSe] = useState({ type: 'X', effective: '', bordx: '', batch: '' })
+  const [seConfirming, setSeConfirming] = useState(false)
+  const seLabel = se.type === 'X' ? 'suspend' : 'delete the policy of'
+  const statusEndorse = useMutation({
+    mutationFn: () => adjustmentApi.statusEndorsement({ memberNumber: member!.memberNumber, type: se.type, effectiveDate: se.effective || null, endorsementBordxDate: se.bordx || null, batchNo: se.batch ? Number(se.batch) : null }),
+    onSuccess: (r) => {
+      setSeConfirming(false)
+      setMessage(r.crossReferenceUpdated ? { severity: 'success', text: r.type === 'X' ? 'Membership suspended.' : 'Policy deleted.' } : { severity: 'error', text: 'Saved, but the maintenance cross reference could not be updated. Please tell IT to re-run the sync.' })
+      load.mutate()
+    },
+    onError: (e) => { setSeConfirming(false); setMessage({ severity: 'error', text: (e as Error).message }) },
+  })
   const set = (k: keyof Form) => (e: { target: { value: string } }) => setForm((f) => (f ? { ...f, [k]: e.target.value } : f))
   const submit = (e: FormEvent) => { e.preventDefault(); setMessage(null); load.mutate() }
 
@@ -158,11 +170,27 @@ export function AdjustmentPage() {
           )}
         </Paper>
       )}
+      {member && form && member.status !== 'D' && (
+        <Paper variant="outlined" sx={{ p: 2, display: 'grid', gap: 2, mt: 2 }}>
+          <Typography variant="subtitle1">Suspend membership / delete policy</Typography>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+            <TextField select size="small" label="Endorsement type" value={se.type} onChange={(e) => setSe({ ...se, type: e.target.value })} sx={{ width: 220 }}>
+              <MenuItem value="X">X - Suspend Membership</MenuItem><MenuItem value="D">D - Delete Policy</MenuItem>
+            </TextField>
+            <TextField size="small" type="date" label="Status effective date" value={se.effective} onChange={(e) => setSe({ ...se, effective: e.target.value })} slotProps={{ inputLabel: { shrink: true } }} />
+            <TextField size="small" type="date" label="Status bordx date" value={se.bordx} onChange={(e) => setSe({ ...se, bordx: e.target.value })} slotProps={{ inputLabel: { shrink: true } }} />
+            <TextField size="small" type="number" label="Status batch no" value={se.batch} onChange={(e) => setSe({ ...se, batch: e.target.value })} sx={{ width: 140 }} />
+            <Button color="error" variant="contained" disabled={statusEndorse.isPending} onClick={() => { setMessage(null); setSeConfirming(true) }}>Apply</Button>
+          </Box>
+        </Paper>
+      )}
+      <ConfirmDialog open={seConfirming} busy={statusEndorse.isPending} title="Confirm endorsement" message={`Do you want to ${seLabel} ${member?.memberNumber}? Covered persons follow the same status.`} onConfirm={() => statusEndorse.mutate()} onCancel={() => setSeConfirming(false)} />
       <ConfirmDialog open={pcConfirming} busy={changePc.isPending} title="Change plan" message={`Do you want to change ${member?.memberNumber} to plan ${pc.plan}? The new fees are recorded and a refund is calculated from ${formatDate(pc.effective)}.`} onConfirm={() => changePc.mutate()} onCancel={() => setPcConfirming(false)} />
       <ConfirmDialog open={cxConfirming} busy={cancelCx.isPending} title="Cancel membership" message={`Do you want to cancel ${member?.memberNumber} effective ${formatDate(cx.cancelDate)}? The covered persons are cancelled too and the refund is recorded.`} onConfirm={() => cancelCx.mutate()} onCancel={() => setCxConfirming(false)} />
       <ConfirmDialog open={confirming} busy={save.isPending} title="Save amendment" message={`Do you want to save the amendment for ${member?.memberNumber}? An amendment history entry will be recorded.`} onConfirm={() => save.mutate()} onCancel={() => setConfirming(false)} />
     </>
   )
 }
+
 
 
