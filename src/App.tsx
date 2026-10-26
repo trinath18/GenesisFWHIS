@@ -4,6 +4,7 @@ import { AppShell } from './layout/AppShell'
 import { ForbiddenPage, HomePage } from './features/home/HomePage'
 import { HospitalsPage } from './features/hospitals/HospitalsPage'
 import { LoginPage } from './features/login/LoginPage'
+import { CaseInquiryPage } from './features/cases/CaseInquiryPage'
 import { EnquiryPage } from './features/membership/EnquiryPage'
 import { navigation } from './config/navigation'
 
@@ -20,6 +21,9 @@ export default function App() {
           <Route element={<RequireScreen position={byPath['/membership/enquiry']} />}>
             <Route path="membership/enquiry" element={<EnquiryPage />} />
           </Route>
+          <Route element={<RequireScreen position={byPath['/cases/inquiry']} />}>
+            <Route path="cases/inquiry" element={<CaseInquiryPage />} />
+          </Route>
           <Route element={<RequireScreen position={byPath['/hospitals']} />}>
             <Route path="hospitals" element={<HospitalsPage />} />
           </Route>
@@ -29,4 +33,5 @@ export default function App() {
     </Routes>
   )
 }
+
 

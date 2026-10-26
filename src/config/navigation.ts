@@ -10,6 +10,8 @@ export interface NavItem {
 
 export const navigation: NavItem[] = [
   { path: '/membership/enquiry', label: 'Membership Enquiry', position: 3 },
+  { path: '/cases/inquiry', label: 'Case Inquiry', position: 13 },
   { path: '/hospitals', label: 'Hospitals (report demo)', position: 3 },
 ]
+
 
