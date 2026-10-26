@@ -1,7 +1,7 @@
 ﻿import { Alert, Box, Button, Checkbox, FormControlLabel, MenuItem, Paper, TextField, Typography } from '@mui/material'
 import { useMutation } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
-import { adjustmentApi, type AdjustmentMember, type CancellationQuote, type PlanChangeQuote, type PrincipalAmendment, type SupplementaryCancelQuote, type SupplementaryQuote } from '../../api/adjustment'
+import { adjustmentApi, type AdjustmentMember, type CancellationQuote, type PlanChangeQuote, type PrincipalAmendment, type SupplementaryCancelQuote, type SupplementaryDeleteQuote, type SupplementaryQuote } from '../../api/adjustment'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { Field, FieldGrid } from '../../components/DataTables'
 import { formatDate, formatMoney } from '../../lib/format'
@@ -127,6 +127,21 @@ export function AdjustmentPage() {
     onError: (e) => { setScConfirming(false); setMessage({ severity: 'error', text: (e as Error).message }) },
   })
   const scSet = (k: 'cover' | 'effective' | 'bordx' | 'batch') => (e: { target: { value: string } }) => { setSc((x) => ({ ...x, [k]: e.target.value })); setScQuote(null) }
+  const [sd, setSd] = useState({ cover: '', effective: '', bordx: '', batch: '' })
+  const [sdQuote, setSdQuote] = useState<SupplementaryDeleteQuote | null>(null)
+  const [sdConfirming, setSdConfirming] = useState(false)
+  const sdRequest = () => ({ memberNumber: member!.memberNumber, coverId: sd.cover, effectiveDate: sd.effective || null, endorsementBordxDate: sd.bordx || null, batchNo: sd.batch ? Number(sd.batch) : null })
+  const quoteSd = useMutation({
+    mutationFn: () => adjustmentApi.quoteSupplementaryDelete(sdRequest()),
+    onSuccess: (q) => { setSdQuote(q); setMessage(null) },
+    onError: (e) => { setSdQuote(null); setMessage({ severity: 'error', text: (e as Error).message }) },
+  })
+  const deleteSd = useMutation({
+    mutationFn: () => adjustmentApi.deleteSupplementary(sdRequest()),
+    onSuccess: (r) => { setSdConfirming(false); setSdQuote(null); setMessage({ severity: 'success', text: `Cover ${r.quote.coverId} deleted (${r.rowsDeleted} rows).` }); load.mutate() },
+    onError: (e) => { setSdConfirming(false); setMessage({ severity: 'error', text: (e as Error).message }) },
+  })
+  const sdSet = (k: 'cover' | 'effective' | 'bordx' | 'batch') => (e: { target: { value: string } }) => { setSd((x) => ({ ...x, [k]: e.target.value })); setSdQuote(null) }
   const set = (k: keyof Form) => (e: { target: { value: string } }) => setForm((f) => (f ? { ...f, [k]: e.target.value } : f))
   const submit = (e: FormEvent) => { e.preventDefault(); setMessage(null); load.mutate() }
 
@@ -276,6 +291,30 @@ export function AdjustmentPage() {
           )}
         </Paper>
       )}
+      {member && form && (member.insurer?.trim() === 'F' || member.insurer?.trim() === 'H') && member.status !== 'C' && member.status !== 'D' && (
+        <Paper variant="outlined" sx={{ p: 2, display: 'grid', gap: 2, mt: 2 }}>
+          <Typography variant="subtitle1">Delete supplementary person</Typography>
+          <Alert severity="warning">Deleting removes the covered person completely. A cover with cases, refunds or lifetime limits cannot be deleted; cancel it instead.</Alert>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+            <TextField size="small" label="Cover id to delete" value={sd.cover} onChange={sdSet('cover')} slotProps={{ htmlInput: { maxLength: 2 } }} sx={{ width: 150 }} />
+            <TextField size="small" type="date" label="Supplementary delete date" value={sd.effective} onChange={sdSet('effective')} slotProps={{ inputLabel: { shrink: true } }} />
+            <TextField size="small" type="date" label="Supplementary delete bordx date" value={sd.bordx} onChange={sdSet('bordx')} slotProps={{ inputLabel: { shrink: true } }} />
+            <TextField size="small" type="number" label="Supplementary delete batch no" value={sd.batch} onChange={sdSet('batch')} sx={{ width: 200 }} />
+            <Button variant="outlined" disabled={quoteSd.isPending} onClick={() => { setMessage(null); quoteSd.mutate() }}>Check supplementary delete</Button>
+          </Box>
+          {sdQuote && (
+            <>
+              <FieldGrid>
+                <Field label="Covered person" value={sdQuote.name} /><Field label="Cover status" value={sdQuote.status} /><Field label="Cases" value={sdQuote.cases} />
+                <Field label="Refund rows" value={sdQuote.refundRows} /><Field label="Lifetime-limit rows" value={sdQuote.lifetimeRows} /><Field label="Clinic / benefit rows" value={`${sdQuote.clinicRows} / ${sdQuote.benefitLimitRows}`} />
+              </FieldGrid>
+              {sdQuote.blockedReason ? <Alert severity="error">Cannot delete: this cover {sdQuote.blockedReason}.</Alert>
+                : <Box><Button color="error" variant="contained" onClick={() => setSdConfirming(true)} disabled={deleteSd.isPending}>Delete supplementary person</Button></Box>}
+            </>
+          )}
+        </Paper>
+      )}
+      <ConfirmDialog open={sdConfirming} busy={deleteSd.isPending} title="Delete supplementary person" message={`Do you want to permanently delete cover ${sd.cover} of ${member?.memberNumber}? The record is kept in the audit log.`} onConfirm={() => deleteSd.mutate()} onCancel={() => setSdConfirming(false)} />
       <ConfirmDialog open={scConfirming} busy={cancelSc.isPending} title="Cancel supplementary person" message={`Do you want to cancel cover ${sc.cover} of ${member?.memberNumber} effective ${formatDate(sc.effective)}?`} onConfirm={() => cancelSc.mutate()} onCancel={() => setScConfirming(false)} />
       <ConfirmDialog open={spConfirming} busy={addSp.isPending} title="Add supplementary person" message={`Do you want to add ${sp.name} to ${member?.memberNumber}? The fees shown are recorded.`} onConfirm={() => addSp.mutate()} onCancel={() => setSpConfirming(false)} />
       <ConfirmDialog open={seConfirming} busy={statusEndorse.isPending} title="Confirm endorsement" message={`Do you want to ${seLabel} ${member?.memberNumber}? Covered persons follow the same status.`} onConfirm={() => statusEndorse.mutate()} onCancel={() => setSeConfirming(false)} />
@@ -285,6 +324,7 @@ export function AdjustmentPage() {
     </>
   )
 }
+
 
 
 

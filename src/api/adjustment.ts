@@ -42,6 +42,11 @@ export interface SupplementaryCancelQuote {
   suppMcoStatus: string; refundWritten: boolean; refund: RefundAmounts
 }
 
+export interface SupplementaryDeleteRequest { memberNumber: string; coverId: string; effectiveDate: string | null; endorsementBordxDate: string | null; batchNo: number | null }
+export interface SupplementaryDeleteQuote {
+  memberNumber: string; coverId: string; name: string | null; status: string | null; cases: number; refundRows: number; lifetimeRows: number; clinicRows: number; benefitLimitRows: number; blockedReason: string | null
+}
+
 const base = '/api/membership/adjustment'
 
 export const adjustmentApi = {
@@ -55,8 +60,11 @@ export const adjustmentApi = {
   addSupplementary: (r: SupplementaryRequest) => api.post<{ quote: SupplementaryQuote }>(`${base}/supplementary`, r),
   quoteSupplementaryCancel: (r: SupplementaryCancelRequest) => api.post<SupplementaryCancelQuote>(`${base}/supplementary/cancel/quote`, r),
   cancelSupplementary: (r: SupplementaryCancelRequest) => api.post<{ quote: SupplementaryCancelQuote }>(`${base}/supplementary/cancel`, r),
+  quoteSupplementaryDelete: (r: SupplementaryDeleteRequest) => api.post<SupplementaryDeleteQuote>(`${base}/supplementary/delete/quote`, r),
+  deleteSupplementary: (r: SupplementaryDeleteRequest) => api.post<{ quote: SupplementaryDeleteQuote; rowsDeleted: number }>(`${base}/supplementary/delete`, r),
   amend: (a: PrincipalAmendment) => api.put<AmendmentResult>(`${base}/amendment`, a),
 }
+
 
 
 
