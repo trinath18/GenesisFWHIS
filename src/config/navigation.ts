@@ -18,8 +18,10 @@ export const navigation: NavItem[] = [
   { path: '/membership/mco-pending', label: 'MCO Pending', position: 3 },
   { path: '/membership/deletion', label: 'Membership Deletion', position: 5 },
   { path: '/membership/reinstatement', label: 'Member Reinstatement', position: 1 },
+  { path: '/membership/adjustment', label: 'Membership Adjustment', position: 2 },
   { path: '/hospitals', label: 'Hospitals (report demo)', position: 3 },
 ]
+
 
 
 
