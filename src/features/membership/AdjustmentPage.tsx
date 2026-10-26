@@ -1,10 +1,10 @@
 ﻿import { Alert, Box, Button, MenuItem, Paper, TextField, Typography } from '@mui/material'
 import { useMutation } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
-import { adjustmentApi, type AdjustmentMember, type PrincipalAmendment } from '../../api/adjustment'
+import { adjustmentApi, type AdjustmentMember, type CancellationQuote, type PrincipalAmendment } from '../../api/adjustment'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { Field, FieldGrid } from '../../components/DataTables'
-import { formatDate } from '../../lib/format'
+import { formatDate, formatMoney } from '../../lib/format'
 
 type Form = Record<'name' | 'policyNo' | 'icBcPp' | 'dateOfBirth' | 'sex' | 'address1' | 'address2' | 'address3' | 'city' | 'state' | 'postCode' | 'race' | 'nationality' | 'salutation' | 'email' | 'telHome' | 'telMobile' | 'telOffice' | 'endorsementBordxDate' | 'effectiveDate' | 'batchNo', string>
 
@@ -43,6 +43,24 @@ export function AdjustmentPage() {
     },
     onError: (e) => { setConfirming(false); setMessage({ severity: 'error', text: (e as Error).message }) },
   })
+  const [cx, setCx] = useState({ cancelDate: '', bordx: '', batch: '' })
+  const [cxQuote, setCxQuote] = useState<CancellationQuote | null>(null)
+  const [cxConfirming, setCxConfirming] = useState(false)
+  const cxRequest = () => ({ memberNumber: member!.memberNumber, cancelDate: cx.cancelDate || null, endorsementBordxDate: cx.bordx || null, batchNo: cx.batch ? Number(cx.batch) : null })
+  const quoteCx = useMutation({
+    mutationFn: () => adjustmentApi.quoteCancellation(cxRequest()),
+    onSuccess: (q) => { setCxQuote(q); setMessage(null) },
+    onError: (e) => { setCxQuote(null); setMessage({ severity: 'error', text: (e as Error).message }) },
+  })
+  const cancelCx = useMutation({
+    mutationFn: () => adjustmentApi.cancel(cxRequest()),
+    onSuccess: (r) => {
+      setCxConfirming(false); setCxQuote(null)
+      setMessage(r.crossReferenceUpdated ? { severity: 'success', text: 'Membership cancelled. Refund recorded.' } : { severity: 'error', text: 'Membership cancelled, but the maintenance cross reference could not be updated. Please tell IT to re-run the sync.' })
+      load.mutate()
+    },
+    onError: (e) => { setCxConfirming(false); setMessage({ severity: 'error', text: (e as Error).message }) },
+  })
   const set = (k: keyof Form) => (e: { target: { value: string } }) => setForm((f) => (f ? { ...f, [k]: e.target.value } : f))
   const submit = (e: FormEvent) => { e.preventDefault(); setMessage(null); load.mutate() }
 
@@ -74,7 +92,30 @@ export function AdjustmentPage() {
           <Box><Button variant="contained" onClick={() => { setMessage(null); setConfirming(true) }} disabled={save.isPending}>Update</Button></Box>
         </Paper>
       )}
+      {member && form && member.status !== 'C' && member.status !== 'D' && (
+        <Paper variant="outlined" sx={{ p: 2, display: 'grid', gap: 2, mt: 2 }}>
+          <Typography variant="subtitle1">Cancel membership</Typography>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+            <TextField size="small" type="date" label="Cancellation date" value={cx.cancelDate} onChange={(e) => { setCx({ ...cx, cancelDate: e.target.value }); setCxQuote(null) }} slotProps={{ inputLabel: { shrink: true } }} />
+            <TextField size="small" type="date" label="Cancel bordx date" value={cx.bordx} onChange={(e) => { setCx({ ...cx, bordx: e.target.value }); setCxQuote(null) }} slotProps={{ inputLabel: { shrink: true } }} />
+            <TextField size="small" type="number" label="Cancel batch no" value={cx.batch} onChange={(e) => { setCx({ ...cx, batch: e.target.value }); setCxQuote(null) }} sx={{ width: 140 }} />
+            <Button variant="outlined" disabled={quoteCx.isPending} onClick={() => { setMessage(null); quoteCx.mutate() }}>Calculate refund</Button>
+          </Box>
+          {cxQuote && (
+            <>
+              <FieldGrid>
+                <Field label="Premium on file" value={formatMoney(cxQuote.premium)} /><Field label="MCO fee on file" value={formatMoney(cxQuote.mcoFee)} />
+                <Field label="Premium refund" value={formatMoney(cxQuote.refund.premiumReduction)} /><Field label="Premium remaining" value={formatMoney(cxQuote.refund.premiumEffective)} />
+                <Field label="MCO refund" value={formatMoney(cxQuote.refund.mcoRefund)} /><Field label="MCO remaining" value={formatMoney(cxQuote.refund.mcoEffective)} />
+              </FieldGrid>
+              <Box><Button color="error" variant="contained" onClick={() => setCxConfirming(true)} disabled={cancelCx.isPending}>Cancel membership</Button></Box>
+            </>
+          )}
+        </Paper>
+      )}
+      <ConfirmDialog open={cxConfirming} busy={cancelCx.isPending} title="Cancel membership" message={`Do you want to cancel ${member?.memberNumber} effective ${formatDate(cx.cancelDate)}? The covered persons are cancelled too and the refund is recorded.`} onConfirm={() => cancelCx.mutate()} onCancel={() => setCxConfirming(false)} />
       <ConfirmDialog open={confirming} busy={save.isPending} title="Save amendment" message={`Do you want to save the amendment for ${member?.memberNumber}? An amendment history entry will be recorded.`} onConfirm={() => save.mutate()} onCancel={() => setConfirming(false)} />
     </>
   )
 }
+
