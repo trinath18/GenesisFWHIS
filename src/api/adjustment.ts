@@ -27,6 +27,15 @@ export interface PlanChangeResult { quote: PlanChangeQuote; crossReferenceUpdate
 export interface StatusEndorsementRequest { memberNumber: string; type: string; effectiveDate: string | null; endorsementBordxDate: string | null; batchNo: number | null }
 export interface StatusEndorsementResult { memberNumber: string; type: string; previousStatus: string; newStatus: string; coveredPersonsUpdated: number; crossReferenceUpdated: boolean }
 
+export interface SupplementaryRequest {
+  memberNumber: string; name: string; salutation: string | null; icBcPp: string; dateOfBirth: string | null; sex: string; relationship: string; allergies: string | null; exclusion: string | null
+  supplementaryPlan: string | null; effectiveDate: string | null; endorsementBordxDate: string | null; batchNo: number | null; renewalDiscount: number | null; policyDiscount: number | null
+}
+export interface SupplementaryQuote {
+  memberNumber: string; coverId: string; name: string; ageText: string; ageCode: string; adultChild: string; plan: string; effectiveDate: string; expiryDate: string
+  annualLimit: number; basicPremium: number; premium: number; basicMco: number; mco: number; suppLimitStatus: string; suppMcoStatus: string; suppPremiumStatus: string
+}
+
 const base = '/api/membership/adjustment'
 
 export const adjustmentApi = {
@@ -36,8 +45,11 @@ export const adjustmentApi = {
   quotePlanChange: (r: PlanChangeRequest) => api.post<PlanChangeQuote>(`${base}/plan-change/quote`, r),
   changePlan: (r: PlanChangeRequest) => api.post<PlanChangeResult>(`${base}/plan-change`, r),
   statusEndorsement: (r: StatusEndorsementRequest) => api.post<StatusEndorsementResult>(`${base}/status-endorsement`, r),
+  quoteSupplementary: (r: SupplementaryRequest) => api.post<SupplementaryQuote>(`${base}/supplementary/quote`, r),
+  addSupplementary: (r: SupplementaryRequest) => api.post<{ quote: SupplementaryQuote }>(`${base}/supplementary`, r),
   amend: (a: PrincipalAmendment) => api.put<AmendmentResult>(`${base}/amendment`, a),
 }
+
 
 
 

@@ -1,7 +1,7 @@
 ﻿import { Alert, Box, Button, Checkbox, FormControlLabel, MenuItem, Paper, TextField, Typography } from '@mui/material'
 import { useMutation } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
-import { adjustmentApi, type AdjustmentMember, type CancellationQuote, type PlanChangeQuote, type PrincipalAmendment } from '../../api/adjustment'
+import { adjustmentApi, type AdjustmentMember, type CancellationQuote, type PlanChangeQuote, type PrincipalAmendment, type SupplementaryQuote } from '../../api/adjustment'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { Field, FieldGrid } from '../../components/DataTables'
 import { formatDate, formatMoney } from '../../lib/format'
@@ -92,6 +92,26 @@ export function AdjustmentPage() {
     },
     onError: (e) => { setSeConfirming(false); setMessage({ severity: 'error', text: (e as Error).message }) },
   })
+  const emptySupp = { name: '', salutation: '', ic: '', dob: '', sex: '', rel: '', allergies: '', exclusion: '', plan: '', effective: '', bordx: '', batch: '', renew: '', policy: '' }
+  const [sp, setSp] = useState(emptySupp)
+  const [spQuote, setSpQuote] = useState<SupplementaryQuote | null>(null)
+  const [spConfirming, setSpConfirming] = useState(false)
+  const spRequest = () => ({
+    memberNumber: member!.memberNumber, name: sp.name, salutation: sp.salutation || null, icBcPp: sp.ic, dateOfBirth: sp.dob || null, sex: sp.sex, relationship: sp.rel, allergies: sp.allergies || null,
+    exclusion: sp.exclusion || null, supplementaryPlan: sp.plan || null, effectiveDate: sp.effective || null, endorsementBordxDate: sp.bordx || null, batchNo: sp.batch ? Number(sp.batch) : null,
+    renewalDiscount: sp.renew ? Number(sp.renew) : null, policyDiscount: sp.policy ? Number(sp.policy) : null,
+  })
+  const quoteSp = useMutation({
+    mutationFn: () => adjustmentApi.quoteSupplementary(spRequest()),
+    onSuccess: (q) => { setSpQuote(q); setMessage(null) },
+    onError: (e) => { setSpQuote(null); setMessage({ severity: 'error', text: (e as Error).message }) },
+  })
+  const addSp = useMutation({
+    mutationFn: () => adjustmentApi.addSupplementary(spRequest()),
+    onSuccess: (r) => { setSpConfirming(false); setSpQuote(null); setSp(emptySupp); setMessage({ severity: 'success', text: `Supplementary person added as cover ${r.quote.coverId}.` }); load.mutate() },
+    onError: (e) => { setSpConfirming(false); setMessage({ severity: 'error', text: (e as Error).message }) },
+  })
+  const spSet = (k: keyof typeof emptySupp) => (e: { target: { value: string } }) => { setSp((x) => ({ ...x, [k]: e.target.value })); setSpQuote(null) }
   const set = (k: keyof Form) => (e: { target: { value: string } }) => setForm((f) => (f ? { ...f, [k]: e.target.value } : f))
   const submit = (e: FormEvent) => { e.preventDefault(); setMessage(null); load.mutate() }
 
@@ -184,6 +204,41 @@ export function AdjustmentPage() {
           </Box>
         </Paper>
       )}
+      {member && form && (member.insurer?.trim() === 'F' || member.insurer?.trim() === 'H') && member.status !== 'C' && member.status !== 'D' && (
+        <Paper variant="outlined" sx={{ p: 2, display: 'grid', gap: 2, mt: 2 }}>
+          <Typography variant="subtitle1">Add supplementary person</Typography>
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 1.5 }}>
+            <TextField size="small" label="Covered name" value={sp.name} onChange={spSet('name')} slotProps={{ htmlInput: { maxLength: 60 } }} />
+            <TextField size="small" label="Covered salutation" value={sp.salutation} onChange={spSet('salutation')} slotProps={{ htmlInput: { maxLength: 5 } }} />
+            <TextField size="small" label="Covered IC / passport" value={sp.ic} onChange={spSet('ic')} slotProps={{ htmlInput: { maxLength: 30 } }} />
+            <TextField size="small" type="date" label="Covered date of birth" value={sp.dob} onChange={spSet('dob')} slotProps={{ inputLabel: { shrink: true } }} />
+            <TextField select size="small" label="Covered sex" value={sp.sex} onChange={spSet('sex')}><MenuItem value="M">M - Male</MenuItem><MenuItem value="F">F - Female</MenuItem></TextField>
+            <TextField size="small" label="Relationship code" value={sp.rel} onChange={spSet('rel')} slotProps={{ htmlInput: { maxLength: 1 } }} />
+            <TextField size="small" label="Covered allergies" value={sp.allergies} onChange={spSet('allergies')} slotProps={{ htmlInput: { maxLength: 500 } }} />
+            <TextField size="small" label="Covered exclusion" value={sp.exclusion} onChange={spSet('exclusion')} slotProps={{ htmlInput: { maxLength: 4000 } }} />
+            <TextField size="small" label="Supplementary plan (if different)" value={sp.plan} onChange={spSet('plan')} slotProps={{ htmlInput: { maxLength: 4 } }} />
+            <TextField size="small" type="number" label="Renewal discount %" value={sp.renew} onChange={spSet('renew')} />
+            <TextField size="small" type="number" label="Policy discount %" value={sp.policy} onChange={spSet('policy')} />
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+            <TextField size="small" type="date" label="Supplementary effective date" value={sp.effective} onChange={spSet('effective')} slotProps={{ inputLabel: { shrink: true } }} />
+            <TextField size="small" type="date" label="Supplementary bordx date" value={sp.bordx} onChange={spSet('bordx')} slotProps={{ inputLabel: { shrink: true } }} />
+            <TextField size="small" type="number" label="Supplementary batch no" value={sp.batch} onChange={spSet('batch')} sx={{ width: 170 }} />
+            <Button variant="outlined" disabled={quoteSp.isPending} onClick={() => { setMessage(null); quoteSp.mutate() }}>Calculate supplementary</Button>
+          </Box>
+          {spQuote && (
+            <>
+              <FieldGrid>
+                <Field label="Cover id" value={spQuote.coverId} /><Field label="Age / band" value={`${spQuote.ageText} / ${spQuote.ageCode}`} /><Field label="Plan" value={spQuote.plan} />
+                <Field label="Cover period" value={`${formatDate(spQuote.effectiveDate)} - ${formatDate(spQuote.expiryDate)}`} /><Field label="Annual limit" value={formatMoney(spQuote.annualLimit)} />
+                <Field label="Premium" value={formatMoney(spQuote.premium)} /><Field label="MCO fee" value={formatMoney(spQuote.mco)} />
+              </FieldGrid>
+              <Box><Button variant="contained" onClick={() => setSpConfirming(true)} disabled={addSp.isPending}>Add supplementary person</Button></Box>
+            </>
+          )}
+        </Paper>
+      )}
+      <ConfirmDialog open={spConfirming} busy={addSp.isPending} title="Add supplementary person" message={`Do you want to add ${sp.name} to ${member?.memberNumber}? The fees shown are recorded.`} onConfirm={() => addSp.mutate()} onCancel={() => setSpConfirming(false)} />
       <ConfirmDialog open={seConfirming} busy={statusEndorse.isPending} title="Confirm endorsement" message={`Do you want to ${seLabel} ${member?.memberNumber}? Covered persons follow the same status.`} onConfirm={() => statusEndorse.mutate()} onCancel={() => setSeConfirming(false)} />
       <ConfirmDialog open={pcConfirming} busy={changePc.isPending} title="Change plan" message={`Do you want to change ${member?.memberNumber} to plan ${pc.plan}? The new fees are recorded and a refund is calculated from ${formatDate(pc.effective)}.`} onConfirm={() => changePc.mutate()} onCancel={() => setPcConfirming(false)} />
       <ConfirmDialog open={cxConfirming} busy={cancelCx.isPending} title="Cancel membership" message={`Do you want to cancel ${member?.memberNumber} effective ${formatDate(cx.cancelDate)}? The covered persons are cancelled too and the refund is recorded.`} onConfirm={() => cancelCx.mutate()} onCancel={() => setCxConfirming(false)} />
@@ -191,6 +246,7 @@ export function AdjustmentPage() {
     </>
   )
 }
+
 
 
 
