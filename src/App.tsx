@@ -15,6 +15,7 @@ import { CardSendingPage } from './features/membership/CardSendingPage'
 import { EnquiryPage } from './features/membership/EnquiryPage'
 import { MemberDeletionPage } from './features/membership/MemberDeletionPage'
 import { McoPendingPage } from './features/membership/McoPendingPage'
+import { ReinstatementPage } from './features/membership/ReinstatementPage'
 import { navigation } from './config/navigation'
 
 const byPath = Object.fromEntries(navigation.map((n) => [n.path, n.position]))
@@ -54,6 +55,9 @@ export default function App() {
           <Route element={<RequireScreen position={byPath['/membership/deletion']} />}>
             <Route path="membership/deletion" element={<MemberDeletionPage />} />
           </Route>
+          <Route element={<RequireScreen position={byPath['/membership/reinstatement']} />}>
+            <Route path="membership/reinstatement" element={<ReinstatementPage />} />
+          </Route>
           <Route element={<RequireScreen position={byPath['/hospitals']} />}>
             <Route path="hospitals" element={<HospitalsPage />} />
           </Route>
@@ -63,6 +67,7 @@ export default function App() {
     </Routes>
   )
 }
+
 
 
 
