@@ -1,13 +1,17 @@
-import { AppBar, Box, Button, Drawer, List, ListItemButton, ListItemText, Toolbar, Typography } from '@mui/material'
+﻿import { AppBar, Box, Button, Drawer, List, ListItemButton, ListItemText, ListSubheader, Toolbar, Typography } from '@mui/material'
+import { useQuery } from '@tanstack/react-query'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { trackingApi } from '../api/tracking'
 import { navigation } from '../config/navigation'
 
-const drawerWidth = 220
+const drawerWidth = 260
 
 export function AppShell() {
   const { user, logout, can } = useAuth()
   const items = navigation.filter((n) => can(n.position))
+  const tracking = useQuery({ queryKey: ['tracking', 'menu', user?.userId], queryFn: trackingApi.list, enabled: !!user })
+  const trackingByModule = [...(tracking.data ?? []).reduce((m, t) => m.set(t.module, [...(m.get(t.module) ?? []), t]), new Map<string, NonNullable<typeof tracking.data>>())]
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -25,6 +29,14 @@ export function AppShell() {
           {items.map((n) => (
             <ListItemButton key={n.path} component={NavLink} to={n.path}><ListItemText primary={n.label} /></ListItemButton>
           ))}
+          {trackingByModule.map(([module, screens]) => (
+            <Box key={module}>
+              <ListSubheader disableSticky sx={{ lineHeight: '32px' }}>{module}</ListSubheader>
+              {screens?.map((t) => (
+                <ListItemButton key={t.id} component={NavLink} to={`/tracking/${t.id}`} sx={{ py: 0.25 }}><ListItemText primary={t.title} slotProps={{ primary: { variant: 'body2' } }} /></ListItemButton>
+              ))}
+            </Box>
+          ))}
         </List>
       </Drawer>
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
@@ -34,3 +46,5 @@ export function AppShell() {
     </Box>
   )
 }
+
+

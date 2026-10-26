@@ -1,4 +1,4 @@
-import { Alert, Box, Link, List, ListItem, Typography } from '@mui/material'
+﻿import { Alert, Box, Link, List, ListItem, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import {
   casesApi,
@@ -14,7 +14,7 @@ import {
 import type { LifetimeLimitRow, NonDisclosureItem, PolicyTerm } from '../../api/membership'
 import { download } from '../../lib/download'
 import { formatDate, formatMoney } from '../../lib/format'
-import { Field, FieldGrid, QueryTable, RowsTable, type Column } from '../membership/components'
+import { Field, FieldGrid, QueryTable, RowsTable, type Column } from '../../components/DataTables'
 import { claimabilityLabels, statusLabels, withLabel, yesNo } from './labels'
 
 const list = (items: (string | null | undefined)[]) => items.filter(Boolean).join(', ')
@@ -470,3 +470,4 @@ export function PolicyWordingTab({ number }: { number: string }) {
   if (w.files.length === 0) return <Typography color="text.secondary">No documents found in {w.folder}.</Typography>
   return <Files files={w.files} open={async (n) => download(await casesApi.policyWordingFile(number, n), n)} />
 }
+

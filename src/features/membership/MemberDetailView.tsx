@@ -1,10 +1,11 @@
-import { Alert, Box, Chip, CircularProgress, Paper, Tab, Tabs, Typography } from '@mui/material'
+﻿import { Alert, Box, Chip, CircularProgress, Paper, Tab, Tabs, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { membershipApi, type MemberDetail } from '../../api/membership'
+import { PrintButton } from '../../components/PrintButton'
 import { download, safeFileName } from '../../lib/download'
 import { formatDate, formatMoney } from '../../lib/format'
-import { Field, FieldGrid } from './components'
+import { Field, FieldGrid } from '../../components/DataTables'
 import {
   AccountHistoryTab,
   AccountTab,
@@ -19,7 +20,6 @@ import {
   NotesTab,
   PolicyTermsTab,
   PolicyWordingTab,
-  PrintButton,
   SupplementaryTab,
   TakeoverClaimsTab,
 } from './MemberTabs'
@@ -153,3 +153,4 @@ export function MemberDetailView({ number }: { number: string }) {
     </Paper>
   )
 }
+

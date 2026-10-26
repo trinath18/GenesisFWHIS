@@ -1,4 +1,4 @@
-﻿import { Alert, Box, Button, Link, List, ListItem, Typography } from '@mui/material'
+﻿import { Alert, Box, Link, List, ListItem, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import {
   membershipApi,
@@ -17,7 +17,7 @@ import {
 } from '../../api/membership'
 import { download } from '../../lib/download'
 import { formatDate, formatMoney } from '../../lib/format'
-import { Field, FieldGrid, QueryTable, RowsTable, type Column } from './components'
+import { Field, FieldGrid, QueryTable, RowsTable, type Column } from '../../components/DataTables'
 
 const caseColumns: Column<MemberCase>[] = [
   { header: 'Case No', cell: (c) => c.caseNumber },
@@ -307,9 +307,5 @@ export function NotesTab({ number, specialNote }: { number: string; specialNote:
       </Box>
     </Box>
   )
-}
-
-export function PrintButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return <Button size="small" variant="outlined" onClick={onClick}>{label}</Button>
 }
 

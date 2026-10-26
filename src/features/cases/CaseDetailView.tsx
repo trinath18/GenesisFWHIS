@@ -1,10 +1,10 @@
-import { Alert, Box, Chip, CircularProgress, Paper, Tab, Tabs, Typography } from '@mui/material'
+﻿import { Alert, Box, Chip, CircularProgress, Paper, Tab, Tabs, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { casesApi, type CaseDetail } from '../../api/cases'
 import { useAuth } from '../../auth/AuthContext'
 import { download } from '../../lib/download'
-import { PrintButton } from '../membership/MemberTabs'
+import { PrintButton } from '../../components/PrintButton'
 import {
   BenefitsTab, CartonTab, CaseDetailsTab, CaseOthersTab, EmailsTab, ExclusionsTab, FormsTab, GuaranteesTab, InvoicesTab, LifetimeTab,
   NonDisclosureTab, NotesTab, PaymentsTab, PolicyTermsTab, PolicyWordingTab, RemindersTab, SurgicalScheduleTab, TakeOverTab, WorksheetsTab,
@@ -87,3 +87,4 @@ export function CaseDetailView({ caseNumber }: { caseNumber: string }) {
     </Paper>
   )
 }
+
