@@ -16,12 +16,23 @@ export interface CancellationRequest { memberNumber: string; cancelDate: string 
 export interface CancellationQuote { memberNumber: string; name: string | null; status: string | null; effectiveDate: string; expiryDate: string; cancelDate: string; premium: number; mcoFee: number; refund: RefundAmounts; coveredPersons: number }
 export interface CancellationResult { quote: CancellationQuote; crossReferenceUpdated: boolean }
 
+export interface PlanChangeRequest { memberNumber: string; newPlan: string; effectiveDate: string | null; endorsementBordxDate: string | null; batchNo: number | null; updateMcoFee: boolean; updateAnnualLimit: boolean }
+export interface PlanChangeQuote {
+  memberNumber: string; name: string | null; status: string | null; oldPlan: string | null; newPlan: string; ageText: string; ageCode: string; adultChild: string
+  basicPremium: number; premium: number; mcoFee: number; currentPremium: number; currentMcoFee: number; mcoFeeDiffers: boolean
+  currentAnnualLimit: number | null; newAnnualLimit: number | null; annualLimitDiffers: boolean; payorEffectiveDate: string; payorExpiryDate: string; refund: RefundAmounts
+}
+export interface PlanChangeResult { quote: PlanChangeQuote; crossReferenceUpdated: boolean }
+
 const base = '/api/membership/adjustment'
 
 export const adjustmentApi = {
   get: (memberNumber: string) => api.get<AdjustmentMember>(`${base}?memberNumber=${encodeURIComponent(memberNumber.trim())}`),
   quoteCancellation: (r: CancellationRequest) => api.post<CancellationQuote>(`${base}/cancellation/quote`, r),
   cancel: (r: CancellationRequest) => api.post<CancellationResult>(`${base}/cancellation`, r),
+  quotePlanChange: (r: PlanChangeRequest) => api.post<PlanChangeQuote>(`${base}/plan-change/quote`, r),
+  changePlan: (r: PlanChangeRequest) => api.post<PlanChangeResult>(`${base}/plan-change`, r),
   amend: (a: PrincipalAmendment) => api.put<AmendmentResult>(`${base}/amendment`, a),
 }
+
 

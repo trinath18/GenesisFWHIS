@@ -1,7 +1,7 @@
-﻿import { Alert, Box, Button, MenuItem, Paper, TextField, Typography } from '@mui/material'
+﻿import { Alert, Box, Button, Checkbox, FormControlLabel, MenuItem, Paper, TextField, Typography } from '@mui/material'
 import { useMutation } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
-import { adjustmentApi, type AdjustmentMember, type CancellationQuote, type PrincipalAmendment } from '../../api/adjustment'
+import { adjustmentApi, type AdjustmentMember, type CancellationQuote, type PlanChangeQuote, type PrincipalAmendment } from '../../api/adjustment'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { Field, FieldGrid } from '../../components/DataTables'
 import { formatDate, formatMoney } from '../../lib/format'
@@ -61,6 +61,25 @@ export function AdjustmentPage() {
     },
     onError: (e) => { setCxConfirming(false); setMessage({ severity: 'error', text: (e as Error).message }) },
   })
+  const [pc, setPc] = useState({ plan: '', effective: '', bordx: '', batch: '', updateMco: true, updateLimit: false })
+  const [pcQuote, setPcQuote] = useState<PlanChangeQuote | null>(null)
+  const [pcConfirming, setPcConfirming] = useState(false)
+  const pcRequest = () => ({ memberNumber: member!.memberNumber, newPlan: pc.plan, effectiveDate: pc.effective || null, endorsementBordxDate: pc.bordx || null, batchNo: pc.batch ? Number(pc.batch) : null, updateMcoFee: pc.updateMco, updateAnnualLimit: pc.updateLimit })
+  const quotePc = useMutation({
+    mutationFn: () => adjustmentApi.quotePlanChange(pcRequest()),
+    onSuccess: (q) => { setPcQuote(q); setMessage(null) },
+    onError: (e) => { setPcQuote(null); setMessage({ severity: 'error', text: (e as Error).message }) },
+  })
+  const changePc = useMutation({
+    mutationFn: () => adjustmentApi.changePlan(pcRequest()),
+    onSuccess: (r) => {
+      setPcConfirming(false); setPcQuote(null)
+      setMessage(r.crossReferenceUpdated ? { severity: 'success', text: 'Plan changed. Refund recorded.' } : { severity: 'error', text: 'Plan changed, but the maintenance copies could not be updated. Please tell IT to re-run the sync.' })
+      load.mutate()
+    },
+    onError: (e) => { setPcConfirming(false); setMessage({ severity: 'error', text: (e as Error).message }) },
+  })
+  const pcSet = (k: 'plan' | 'effective' | 'bordx' | 'batch') => (e: { target: { value: string } }) => { setPc((x) => ({ ...x, [k]: e.target.value })); setPcQuote(null) }
   const set = (k: keyof Form) => (e: { target: { value: string } }) => setForm((f) => (f ? { ...f, [k]: e.target.value } : f))
   const submit = (e: FormEvent) => { e.preventDefault(); setMessage(null); load.mutate() }
 
@@ -113,9 +132,37 @@ export function AdjustmentPage() {
           )}
         </Paper>
       )}
+      {member && form && member.status !== 'C' && member.status !== 'D' && (
+        <Paper variant="outlined" sx={{ p: 2, display: 'grid', gap: 2, mt: 2 }}>
+          <Typography variant="subtitle1">Change plan</Typography>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+            <TextField size="small" label="New plan code" value={pc.plan} onChange={pcSet('plan')} slotProps={{ htmlInput: { maxLength: 8 } }} sx={{ width: 160 }} />
+            <TextField size="small" type="date" label="Plan change effective date" value={pc.effective} onChange={pcSet('effective')} slotProps={{ inputLabel: { shrink: true } }} />
+            <TextField size="small" type="date" label="Plan change bordx date" value={pc.bordx} onChange={pcSet('bordx')} slotProps={{ inputLabel: { shrink: true } }} />
+            <TextField size="small" type="number" label="Plan change batch no" value={pc.batch} onChange={pcSet('batch')} sx={{ width: 160 }} />
+            <Button variant="outlined" disabled={quotePc.isPending} onClick={() => { setMessage(null); quotePc.mutate() }}>Calculate plan change</Button>
+          </Box>
+          {pcQuote && (
+            <>
+              <FieldGrid>
+                <Field label="Old plan" value={pcQuote.oldPlan} /><Field label="New plan" value={pcQuote.newPlan} /><Field label="Age / band" value={`${pcQuote.ageText} / ${pcQuote.ageCode}`} />
+                <Field label="New premium" value={formatMoney(pcQuote.premium)} /><Field label="Premium on file" value={formatMoney(pcQuote.currentPremium)} />
+                <Field label="New MCO fee" value={formatMoney(pcQuote.mcoFee)} /><Field label="MCO fee on file" value={formatMoney(pcQuote.currentMcoFee)} />
+                <Field label="Premium refund" value={formatMoney(pcQuote.refund.premiumReduction)} /><Field label="MCO refund" value={formatMoney(pcQuote.refund.mcoRefund)} />
+                <Field label="Annual limit (now / new)" value={`${formatMoney(pcQuote.currentAnnualLimit)} / ${formatMoney(pcQuote.newAnnualLimit)}`} />
+              </FieldGrid>
+              {pcQuote.mcoFeeDiffers && <FormControlLabel control={<Checkbox checked={pc.updateMco} onChange={(e) => { setPc((x) => ({ ...x, updateMco: e.target.checked })); setPcQuote(null) }} />} label="Change the member's MCO fee to the new plan's fee" />}
+              {pcQuote.annualLimitDiffers && pcQuote.newAnnualLimit !== null && <FormControlLabel control={<Checkbox checked={pc.updateLimit} onChange={(e) => setPc((x) => ({ ...x, updateLimit: e.target.checked }))} />} label="Change the annual limit" />}
+              <Box><Button variant="contained" onClick={() => setPcConfirming(true)} disabled={changePc.isPending}>Change plan</Button></Box>
+            </>
+          )}
+        </Paper>
+      )}
+      <ConfirmDialog open={pcConfirming} busy={changePc.isPending} title="Change plan" message={`Do you want to change ${member?.memberNumber} to plan ${pc.plan}? The new fees are recorded and a refund is calculated from ${formatDate(pc.effective)}.`} onConfirm={() => changePc.mutate()} onCancel={() => setPcConfirming(false)} />
       <ConfirmDialog open={cxConfirming} busy={cancelCx.isPending} title="Cancel membership" message={`Do you want to cancel ${member?.memberNumber} effective ${formatDate(cx.cancelDate)}? The covered persons are cancelled too and the refund is recorded.`} onConfirm={() => cancelCx.mutate()} onCancel={() => setCxConfirming(false)} />
       <ConfirmDialog open={confirming} busy={save.isPending} title="Save amendment" message={`Do you want to save the amendment for ${member?.memberNumber}? An amendment history entry will be recorded.`} onConfirm={() => save.mutate()} onCancel={() => setConfirming(false)} />
     </>
   )
 }
+
 
