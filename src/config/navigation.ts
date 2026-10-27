@@ -19,8 +19,10 @@ export const navigation: NavItem[] = [
   { path: '/membership/deletion', label: 'Membership Deletion', position: 5 },
   { path: '/membership/reinstatement', label: 'Member Reinstatement', position: 1 },
   { path: '/membership/adjustment', label: 'Membership Adjustment', position: 2 },
+  { path: '/membership/registration', label: 'Membership Registration', position: 1 },
   { path: '/hospitals', label: 'Hospitals (report demo)', position: 3 },
 ]
+
 
 
 

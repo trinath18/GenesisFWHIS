@@ -8,10 +8,8 @@ export const menuTree: MenuNode[] = [
         "children":  [
                          {
                              "label":  "Registration",
-                             "positions":  [
-                                               1
-                                           ],
-                             "legacyForm":  "frmMemberEntry"
+                             "route":  "/membership/registration",
+                             "positions":  1
                          },
                          {
                              "label":  "Adjustment",
