@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { lookupApi, type LookupMeta, type LookupRow } from '../../api/lookups'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
+import { DateField } from '../../components/DateField'
+import { toDmy } from '../../lib/dates'
 
 /** Generic list / add / edit / delete screen for every code table in the server's lookup catalog. */
 export function LookupPage() {
@@ -52,7 +54,7 @@ function LookupTable({ meta }: { meta: LookupMeta }) {
           <TableBody>
             {(rows.data ?? []).map((row) => (
               <TableRow key={row.key} hover>
-                {meta.fields.map((f) => <TableCell key={f.key} align={f.kind === 'Money' ? 'right' : 'left'} sx={f.multiline ? { maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } : undefined}>{f.kind === 'Money' && row.values[f.key] ? Number(row.values[f.key]).toLocaleString('en-US', { minimumFractionDigits: 2 }) : row.values[f.key]}</TableCell>)}
+                {meta.fields.map((f) => <TableCell key={f.key} align={f.kind === 'Money' ? 'right' : 'left'} sx={f.multiline ? { maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } : undefined}>{f.kind === 'Money' && row.values[f.key] ? Number(row.values[f.key]).toLocaleString('en-US', { minimumFractionDigits: 2 }) : f.kind === 'Date' ? toDmy(row.values[f.key] ?? '') : row.values[f.key]}</TableCell>)}
                 <TableCell align="right">
                   <Button size="small" onClick={() => { setMessage(null); setEditing({ mode: 'edit', row }) }}>Edit</Button>
                   {meta.allowDelete && <Button size="small" color="error" onClick={() => setDeleting(row)}>Delete</Button>}
@@ -96,12 +98,14 @@ function RecordDialog({ meta, editing, onClose, onSaved }: { meta: LookupMeta; e
         <DialogTitle>{editing.mode === 'add' ? 'Add' : 'Edit'} - {meta.title}</DialogTitle>
         <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
           {error && <Alert severity="error">{error}</Alert>}
-          {meta.fields.filter((f) => !(f.isKey && meta.keyIsIdentity && editing.mode === 'add')).map((f) => (
+          {meta.fields.filter((f) => !(f.isKey && meta.keyIsIdentity && editing.mode === 'add')).map((f) => f.kind === 'Date' ? (
+            <DateField key={f.key} label={f.label} required={f.required} value={values[f.key] ?? ''} onChange={(iso) => setValues((v) => ({ ...v, [f.key]: iso }))} />
+          ) : (
             <TextField
               key={f.key} label={f.label} required={f.required} size="small" value={values[f.key] ?? ''}
               select={f.kind === 'Choice'} multiline={f.multiline} minRows={f.multiline ? 3 : undefined}
               disabled={f.isKey && editing.mode === 'edit'}
-              slotProps={{ htmlInput: { maxLength: f.kind === 'Choice' ? undefined : f.maxLength, inputMode: f.kind === 'Money' ? 'decimal' : undefined } }}
+              slotProps={{ htmlInput: { maxLength: f.kind === 'Choice' ? undefined : f.maxLength, inputMode: f.kind === 'Money' ? 'decimal' : f.kind === 'Integer' ? 'numeric' : undefined } }}
               onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
             >
               {f.kind === 'Choice' && [<MenuItem key="" value="">(none)</MenuItem>, ...(f.choices ?? []).map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)]}
@@ -117,4 +121,5 @@ function RecordDialog({ meta, editing, onClose, onSaved }: { meta: LookupMeta; e
     </>
   )
 }
+
 

@@ -1,4 +1,4 @@
-import { CssBaseline } from '@mui/material'
+﻿import { CssBaseline, GlobalStyles } from '@mui/material'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -14,9 +14,11 @@ createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <AuthProvider>
           <CssBaseline />
+      <GlobalStyles styles={{ 'html, body, #root': { height: '100%', overflow: 'hidden' } }} />
           <App />
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </StrictMode>,
 )
+

@@ -1386,15 +1386,78 @@ export const menuTree: MenuNode[] = [
         "children":  [
                          {
                              "label":  "Plan",
-                             "positions":  [
-                                               80,
-                                               81,
-                                               82,
-                                               83,
-                                               84,
-                                               85
-                                           ],
-                             "legacyForm":  ""
+                             "children":  [
+                                              {
+                                                  "label":  "Health Type",
+                                                  "route":  "/lookups/plan-health",
+                                                  "positions":  [
+                                                                    80
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Insured Type",
+                                                  "route":  "/lookups/plan-insured",
+                                                  "positions":  [
+                                                                    81
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Plan Code / Special Note",
+                                                  "route":  "/lookups/plan-code",
+                                                  "positions":  [
+                                                                    82
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Premium",
+                                                  "route":  "/lookups/plan-premium",
+                                                  "positions":  [
+                                                                    83
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Annual Limit",
+                                                  "route":  "/lookups/plan-annual-limit",
+                                                  "positions":  [
+                                                                    84
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "MCO Fee",
+                                                  "route":  "/lookups/plan-mco-fee",
+                                                  "positions":  [
+                                                                    85
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Annual Limit (Benefit)",
+                                                  "route":  "/lookups/plan-benefit-limit",
+                                                  "positions":  [
+                                                                    84
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Product Category",
+                                                  "route":  "/lookups/plan-product-category",
+                                                  "positions":  [
+                                                                    82
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Supp. MCO Status",
+                                                  "route":  "/lookups/plan-supp-mco-status",
+                                                  "positions":  [
+                                                                    85
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Case Mgmt. Fee",
+                                                  "route":  "/lookups/plan-case-mgmt-fee",
+                                                  "positions":  [
+                                                                    85
+                                                                ]
+                                              }
+                                          ]
                          },
                          {
                              "label":  "Benefits",
