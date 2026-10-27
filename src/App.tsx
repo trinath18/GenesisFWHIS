@@ -19,6 +19,7 @@ import { McoPendingPage } from './features/membership/McoPendingPage'
 import { RegistrationPage } from './features/membership/RegistrationPage'
 import { BenefitEntryPage } from './features/maintenance/BenefitEntryPage'
 import { BenefitListingPage } from './features/maintenance/BenefitListingPage'
+import { IcdSelectionPage } from './features/maintenance/IcdSelectionPage'
 import { ReinstatementPage } from './features/membership/ReinstatementPage'
 import { navigation } from './config/navigation'
 
@@ -74,6 +75,9 @@ export default function App() {
           <Route element={<RequireScreen position={byPath['/maintenance/benefit-listing']} />}>
             <Route path="maintenance/benefit-listing" element={<BenefitListingPage />} />
           </Route>
+          <Route element={<RequireScreen position={byPath['/maintenance/icd-selection']} />}>
+            <Route path="maintenance/icd-selection" element={<IcdSelectionPage />} />
+          </Route>
           <Route element={<RequireScreen position={byPath['/hospitals']} />}>
             <Route path="hospitals" element={<HospitalsPage />} />
           </Route>
@@ -83,6 +87,7 @@ export default function App() {
     </Routes>
   )
 }
+
 
 
 

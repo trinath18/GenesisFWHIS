@@ -1494,17 +1494,64 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Case",
-                             "positions":  [
-                                               90,
-                                               91,
-                                               92,
-                                               93,
-                                               94,
-                                               95,
-                                               96,
-                                               97
-                                           ],
-                             "legacyForm":  "frmMaintenanceCase"
+                             "children":  [
+                                              {
+                                                  "label":  "ICD Selection",
+                                                  "route":  "/maintenance/icd-selection",
+                                                  "positions":  [
+                                                                    90
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "ICD Maintenance",
+                                                  "route":  "/lookups/case-icd",
+                                                  "positions":  [
+                                                                    91
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "ICD Category",
+                                                  "route":  "/lookups/case-icd-category",
+                                                  "positions":  [
+                                                                    92
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Repudiation Code",
+                                                  "route":  "/lookups/case-repudiation-code",
+                                                  "positions":  [
+                                                                    93
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Repudiation Category",
+                                                  "route":  "/lookups/case-repudiation-category",
+                                                  "positions":  [
+                                                                    94
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Nature of Claim",
+                                                  "route":  "/lookups/case-claim-nature",
+                                                  "positions":  [
+                                                                    95
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Treatment Modality",
+                                                  "route":  "/lookups/case-treatment-modality",
+                                                  "positions":  [
+                                                                    96
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Hospitalisation Type",
+                                                  "route":  "/lookups/case-hospitalisation-type",
+                                                  "positions":  [
+                                                                    97
+                                                                ]
+                                              }
+                                          ]
                          },
                          {
                              "label":  "Date",
