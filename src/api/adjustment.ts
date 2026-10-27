@@ -1,4 +1,5 @@
 ﻿import { api } from './client'
+import type { CoveredPerson, MemberAmendment, MemberDetail, MemberFees, MemberHistory, MemberSearchPage } from './membership'
 
 export interface AdjustmentMember {
   memberNumber: string; name: string | null; policyNo: string | null; icBcPp: string | null; dateOfBirth: string | null; sex: string | null
@@ -62,8 +63,18 @@ export const adjustmentApi = {
   cancelSupplementary: (r: SupplementaryCancelRequest) => api.post<{ quote: SupplementaryCancelQuote }>(`${base}/supplementary/cancel`, r),
   quoteSupplementaryDelete: (r: SupplementaryDeleteRequest) => api.post<SupplementaryDeleteQuote>(`${base}/supplementary/delete/quote`, r),
   deleteSupplementary: (r: SupplementaryDeleteRequest) => api.post<{ quote: SupplementaryDeleteQuote; rowsDeleted: number }>(`${base}/supplementary/delete`, r),
+  search: (q: string) => api.get<MemberSearchPage>(`${base}/search?q=${encodeURIComponent(q.trim())}`),
+  overview: (n: string) => api.get<{ detail: MemberDetail; managementNote: string | null }>(`${base}/overview?memberNumber=${encodeURIComponent(n)}`),
+  neighbour: (n: string, direction: 'next' | 'previous') => api.get<{ memberNumber: string }>(`${base}/neighbour?memberNumber=${encodeURIComponent(n)}&direction=${direction}`),
+  amendments: (n: string) => api.get<MemberAmendment[]>(`${base}/amendments?memberNumber=${encodeURIComponent(n)}`),
+  coveredPersons: (n: string) => api.get<CoveredPerson[]>(`${base}/covered-persons?memberNumber=${encodeURIComponent(n)}`),
+  memberHistory: (n: string) => api.get<MemberHistory>(`${base}/member-history?memberNumber=${encodeURIComponent(n)}`),
+  fees: (n: string) => api.get<MemberFees>(`${base}/fees?memberNumber=${encodeURIComponent(n)}`),
+  saveMgmtNote: (memberNumber: string, note: string) => api.put<{ saved: boolean }>(`${base}/mgmt-note`, { memberNumber, note }),
   amend: (a: PrincipalAmendment) => api.put<AmendmentResult>(`${base}/amendment`, a),
 }
+
+
 
 
 

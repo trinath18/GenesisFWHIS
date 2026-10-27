@@ -16,3 +16,9 @@ export function DateField({ value, onChange, ...rest }: Props) {
   )
 }
 
+
+/** Drop-in for a TextField of type date: keeps the onChange(event) shape (event.target.value is yyyy-mm-dd) but shows and accepts dd/mm/yyyy. */
+export function DateInput({ value, onChange, ...rest }: Omit<Props, 'onChange'> & { onChange: (e: { target: { value: string } }) => void }) {
+  return <DateField {...rest} value={value} onChange={(iso) => onChange({ target: { value: iso } })} />
+}
+
