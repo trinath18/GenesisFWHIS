@@ -1475,6 +1475,20 @@ export const menuTree: MenuNode[] = [
                                                   "positions":  [
                                                                     87
                                                                 ]
+                                              },
+                                              {
+                                                  "label":  "Benefit Entry",
+                                                  "route":  "/maintenance/benefit-entry",
+                                                  "positions":  [
+                                                                    88
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Benefits Listing",
+                                                  "route":  "/maintenance/benefit-listing",
+                                                  "positions":  [
+                                                                    89
+                                                                ]
                                               }
                                           ]
                          },
