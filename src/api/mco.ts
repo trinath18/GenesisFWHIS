@@ -42,3 +42,17 @@ export const mcoCorrectionApi = {
   search: (f: McoManualFilter) => api.post<McoCorrectionListing>('/api/mco/correction/search', f),
   update: (items: { memberNumber: string; coverId: string }[], fee: number) => api.post<{ updated: number; fee: number }>('/api/mco/correction/update', { items, fee }),
 }
+
+export interface McoReceiptInvoice { number: string; date: string | null; total: number; payor: string; kind: 'Invoice' | 'CreditNote'; receiptLines: number; received: number; receiptNo: string | null }
+export interface McoReceiptRow { kind: 'M' | 'O'; index: number; receiptNo: string; receiptDate: string | null; amount: number | null; type: string; invoiceNo: string | null; invoiceDate: string | null; allocated: number | null; chequeNo: string | null; chequeDate: string | null; accountCode: string | null; remarks: string | null; updatedBy: string | null }
+export interface McoReceiptRequest { type: string; receiptNo: string | null; receiptDate: string | null; amount: number | null; chequeNo: string | null; chequeDate: string | null; remarks: string | null; accountCode: string | null; invoices: string[] | null }
+
+const rb = '/api/mco/receipts'
+export const mcoReceiptApi = {
+  payors: () => api.get<McoPayor[]>(`${rb}/payors`),
+  invoices: (q: Record<string, string>) => api.get<{ rows: McoReceiptInvoice[]; truncated: boolean }>(`${rb}/invoices?${new URLSearchParams(Object.entries(q).filter(([, v]) => v)).toString()}`),
+  list: (q: Record<string, string>) => api.get<{ rows: McoReceiptRow[]; totalAmount: number; truncated: boolean }>(`${rb}?${new URLSearchParams(Object.entries(q).filter(([, v]) => v)).toString()}`),
+  create: (r: McoReceiptRequest, manual: boolean) => api.post<{ receiptNo: string; lines: number; allocated: number; difference: number }>(manual ? `${rb}/manual` : rb, r),
+  update: (kind: string, index: number, u: { receiptDate: string | null; amount: number | null; chequeNo: string | null; chequeDate: string | null; remarks: string | null; allocated: number | null }) => api.put<{ updated: boolean }>(`${rb}/${kind}/${index}`, u),
+  remove: (kind: string, index: number) => api.delete<{ deleted: boolean }>(`${rb}/${kind}/${index}`),
+}

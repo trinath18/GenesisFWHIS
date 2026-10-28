@@ -29,8 +29,11 @@ export const navigation: NavItem[] = [
   { path: '/mco/fwhs-invoice-sst', label: 'MCO Inv/Listing SST', position: 20 },
   { path: '/mco/manual-invoice', label: 'Invoice Manual Upd', position: 148 },
   { path: '/mco/correction', label: 'MCO Correction', position: 20 },
+  { path: '/mco/receipt', label: 'Receipt MCO/Others', position: 19 },
+  { path: '/mco/receipt-manual', label: 'Receipt MCO/Others (Manual)', position: 19 },
   { path: '/hospitals', label: 'Hospitals (report demo)', position: 3 },
 ]
+
 
 
 

@@ -195,17 +195,13 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Receipt MCO/Others",
-                             "positions":  [
-                                               19
-                                           ],
-                             "legacyForm":  "FrmRecMCO"
+                             "route":  "/mco/receipt",
+                             "positions":  19
                          },
                          {
                              "label":  "Receipt MCO/Others (Manual)",
-                             "positions":  [
-                                               19
-                                           ],
-                             "legacyForm":  "frmRecMCOManual"
+                             "route":  "/mco/receipt-manual",
+                             "positions":  19
                          },
                          {
                              "label":  "MCO Invoice (ASCII)",
