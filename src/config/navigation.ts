@@ -24,8 +24,12 @@ export const navigation: NavItem[] = [
   { path: '/maintenance/benefit-listing', label: 'Benefits Listing', position: 89 },
   { path: '/maintenance/icd-selection', label: 'ICD Selection', position: 90 },
   { path: '/mco/refund-listing', label: 'MCO Refund Listing', position: 21 },
+  { path: '/mco/fwhs-invoice', label: 'MCO Inv/Listing', position: 20 },
+  { path: '/mco/fwhs-invoice-gst', label: 'MCO Inv/Listing GST', position: 20 },
+  { path: '/mco/fwhs-invoice-sst', label: 'MCO Inv/Listing SST', position: 20 },
   { path: '/hospitals', label: 'Hospitals (report demo)', position: 3 },
 ]
+
 
 
 

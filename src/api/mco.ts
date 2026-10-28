@@ -16,3 +16,12 @@ export const mcoApi = {
     api.get<McoRefundListing>(`${base}?${new URLSearchParams(Object.entries(q).filter(([, v]) => v)).toString()}`),
   refundSupplementary: (memberNumber: string) => api.get<McoRefundRow[]>(`${base}/supplementary?memberNumber=${encodeURIComponent(memberNumber)}`),
 }
+
+export interface FwhsInvoiceRow { kind: string; policyNo: string | null; date: string | null; batchNo: string | null; workers: number; fee: number; tax: number; total: number; invoiceNo: string | null; invoiceDate: string | null; invoiceBy: string | null }
+export interface FwhsInvoiceListing { payorName: string; billingMode: string; medixTax: boolean; rows: FwhsInvoiceRow[]; totalWorkers: number; totalFee: number; totalTax: number; total: number; truncated: boolean }
+export interface FwhsInvoiceQuery { payor: string; mode: 'new' | 'reprint'; from: string; to: string; invoiceNo: string; tax: string }
+
+export const fwhsInvoiceApi = {
+  list: (q: FwhsInvoiceQuery) => api.get<FwhsInvoiceListing>(`/api/mco/fwhs-invoice?${new URLSearchParams(Object.entries(q).filter(([, v]) => v)).toString()}`),
+  invoice: (q: FwhsInvoiceQuery) => api.post<{ invoiceNo: string; rowsInvoiced: number; listing: FwhsInvoiceListing }>('/api/mco/fwhs-invoice', { payor: q.payor, mode: 'new', from: q.from || null, to: q.to || null, invoiceNo: null, tax: q.tax }),
+}

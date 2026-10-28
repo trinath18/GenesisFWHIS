@@ -151,24 +151,18 @@ export const menuTree: MenuNode[] = [
         "children":  [
                          {
                              "label":  "MCO Inv/Listing",
-                             "positions":  [
-                                               20
-                                           ],
-                             "legacyForm":  "frmFWHSMCOFee"
+                             "route":  "/mco/fwhs-invoice",
+                             "positions":  20
                          },
                          {
                              "label":  "MCO Inv/Listing GST",
-                             "positions":  [
-                                               20
-                                           ],
-                             "legacyForm":  "frmFWHSMCOFeeGST"
+                             "route":  "/mco/fwhs-invoice-gst",
+                             "positions":  20
                          },
                          {
                              "label":  "MCO Inv/Listing SST",
-                             "positions":  [
-                                               20
-                                           ],
-                             "legacyForm":  "frmFWHSMCOFeeSST"
+                             "route":  "/mco/fwhs-invoice-sst",
+                             "positions":  20
                          },
                          {
                              "label":  "MCO Reinstatement",
