@@ -213,10 +213,8 @@ export const menuTree: MenuNode[] = [
         "children":  [
                          {
                              "label":  "Case Registration",
-                             "positions":  [
-                                               11
-                                           ],
-                             "legacyForm":  "frmCaseAdmission"
+                             "route":  "/cases/registration",
+                             "positions":  11
                          },
                          {
                              "label":  "Case Adjustment",
