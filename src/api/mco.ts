@@ -56,3 +56,19 @@ export const mcoReceiptApi = {
   update: (kind: string, index: number, u: { receiptDate: string | null; amount: number | null; chequeNo: string | null; chequeDate: string | null; remarks: string | null; allocated: number | null }) => api.put<{ updated: boolean }>(`${rb}/${kind}/${index}`, u),
   remove: (kind: string, index: number) => api.delete<{ deleted: boolean }>(`${rb}/${kind}/${index}`),
 }
+
+export interface McoReinstatementRow { memberNumber: string; coverId: string; name: string | null; relation: string; bordxDate: string | null; batch: string | null; policyNo: string | null; payorEffective: string | null; payorExpiry: string | null; type: string | null; lapsedDate: string | null; reinstateDate: string | null; invoiceNo: string | null; invoiceDate: string | null; invoiceBy: string | null; mcoFee: number | null }
+export interface McoReinstatementListing { rows: McoReinstatementRow[]; totalPrincipal: number; totalSupplementary: number; totalFee: number; invoiced: boolean; truncated: boolean }
+export interface McoReinstatementQuery { mode: 'batch' | 'invoice'; payor: string; bordxDate: string; batchNo: string; invoiceNo: string }
+
+export const mcoReinstatementApi = {
+  payors: () => api.get<McoPayor[]>('/api/mco/reinstatement/payors'),
+  list: (q: McoReinstatementQuery) => api.get<McoReinstatementListing>(`/api/mco/reinstatement?${new URLSearchParams(Object.entries(q).filter(([, v]) => v)).toString()}`),
+  invoice: (q: McoReinstatementQuery) => api.post<{ invoiceNo: string; rowsInvoiced: number; listing: McoReinstatementListing }>('/api/mco/reinstatement/invoice', { mode: 'batch', payor: q.payor, bordxDate: q.bordxDate || null, batchNo: q.batchNo ? Number(q.batchNo) : null, invoiceNo: null }),
+}
+
+export interface McoDateFilter extends McoManualFilter { invoiceFrom: string | null; invoiceTo: string | null }
+export const mcoDateCorrectionApi = {
+  search: (f: McoDateFilter) => api.post<McoCorrectionListing>('/api/mco/date-correction/search', f),
+  update: (items: { memberNumber: string; coverId: string }[], invoiceDate: string, batchNo: number | null) => api.post<{ updated: number; invoiceDate: string; batchNo: number | null }>('/api/mco/date-correction/update', { items, invoiceDate, batchNo }),
+}

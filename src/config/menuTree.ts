@@ -166,10 +166,8 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "MCO Reinstatement",
-                             "positions":  [
-                                               1
-                                           ],
-                             "legacyForm":  "frmMCOInvoiceReinstatement"
+                             "route":  "/mco/reinstatement",
+                             "positions":  1
                          },
                          {
                              "label":  "Refund Listing",
@@ -183,10 +181,8 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Date Correction",
-                             "positions":  [
-                                               20
-                                           ],
-                             "legacyForm":  "frmMCOInvoiceCorrection"
+                             "route":  "/mco/date-correction",
+                             "positions":  20
                          },
                          {
                              "label":  "Invoice Manual Upd",
