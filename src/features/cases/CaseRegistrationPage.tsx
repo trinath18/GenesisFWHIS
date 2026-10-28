@@ -12,11 +12,12 @@ const blank = {
   patientId: '', claimability: 'AA', hospitalCode: '', hospitalName: '', dateAdmitted: '', dateDischarge: '', pending: 'N', reserve: '', lg: '', lgTime: '', payType: 'C', stayType: 'I', modality: '', nature: '', special: '', topUp: 'N', query: 'N', link: '',
   referredBy: '', reason: '', docDate: '', policyYear: '', esp: '', takeOverInd: 'N', takeOverAmt: '', takeOverPlan: '', intExt: '', age: '', ageUnit: 'Y', firstCall: '', firstTreated: '', payPending: 'N', followUp: 'N', recur: 'N', followReq: 'N',
   remarks: ['', '', '', '', ''], first: [{ code: '', text: '', date: '' }, { code: '', text: '', date: '' }, { code: '', text: '', date: '' }], final: [{ code: '', text: '', date: '' }, { code: '', text: '', date: '' }, { code: '', text: '', date: '' }],
+  ud: [{ code: '', text: '', date: '' }, { code: '', text: '', date: '' }, { code: '', text: '', date: '' }], rep: ['', '', ''], document: '', personnel: '', attention: '', underlying: 'N', deduction: '',
 }
 type Form = typeof blank
 const dmyText = (iso: string) => (iso ? toDmy(iso) : null)
 
-/** Legacy: Case > Case Registration (frmCaseAdmission), first slice: policy lookup, patient, case details, remarks, first and final diagnoses. Repudiation, take-over limits, benefits and letters are not migrated yet. */
+/** Legacy: Case > Case Registration (frmCaseAdmission), policy lookup, patient, case details, remarks, first / final / underlying diagnoses, repudiation and the limit deduction. Benefits, doctors, procedures and the Word letters are not migrated yet. */
 export function CaseRegistrationPage() {
   const options = useQuery({ queryKey: ['case-reg-options'], queryFn: caseRegistrationApi.options })
   const [number, setNumber] = useState('')
@@ -42,6 +43,8 @@ export function CaseRegistrationPage() {
     takeOverInd: f.takeOverInd, takeOverAmount: f.takeOverAmt === '' ? null : Number(f.takeOverAmt), takeOverPlan: f.takeOverPlan || null, intExtTakeOver: f.intExt || null, patientAge: f.age || null, ageUnit: f.ageUnit,
     firstCall: dmyText(f.firstCall), firstTreated: dmyText(f.firstTreated), payPending: f.payPending, followUp: f.followUp, conditionWillRecur: f.recur, followUpRequired: f.followReq, remarks: f.remarks,
     firstDiagnosis: f.first.map(diag), finalDiagnosis: f.final.map(diag), acknowledgeLongStay: a.long, acknowledgeRecentPolicy: a.recent, acknowledgeOpenCase: a.open,
+    repudiationCodes: repudiating ? f.rep.filter(Boolean) : null, document: repudiating ? f.document || null : null, personnel: repudiating ? f.personnel || null : null, attention: repudiating ? f.attention || null : null, underlying: f.underlying === 'Y',
+    underlyingDiagnosis: f.ud.map(diag), deductionAmount: f.deduction === '' ? null : Number(f.deduction),
   })
   const register = useMutation({
     mutationFn: (a: typeof ack) => caseRegistrationApi.register(request(a)),
@@ -59,7 +62,8 @@ export function CaseRegistrationPage() {
   const text = (label: string, k: keyof Form, props: Record<string, unknown> = {}) => <TextField size="small" label={label} value={f[k] as string} onChange={set(k)} {...props} />
   const select = (label: string, k: keyof Form, items: [string, string][], width = 170, required = false) => <TextField select size="small" label={label} required={required} value={f[k] as string} onChange={set(k)} sx={{ width }}>{items.map(([c, n]) => <MenuItem key={c} value={c}>{n}</MenuItem>)}</TextField>
   const opt = (list?: { code: string; name: string }[]): [string, string][] => (list ?? []).map((o) => [o.code, `${o.code} - ${o.name}`])
-  const setDiag = (which: 'first' | 'final', i: number, patch: Partial<{ code: string; text: string; date: string }>) => setF((x) => ({ ...x, [which]: x[which].map((d, j) => (j === i ? { ...d, ...patch } : d)) }))
+  const setDiag = (which: 'first' | 'final' | 'ud', i: number, patch: Partial<{ code: string; text: string; date: string }>) => setF((x) => ({ ...x, [which]: x[which].map((d, j) => (j === i ? { ...d, ...patch } : d)) }))
+  const repudiating = ['RR', 'NR', 'PR', 'AR', 'BR', 'ER'].includes(f.claimability)
   const blocked = !!member?.blockedReason
   const hospitalOptions = hospitals.data ?? []
 
@@ -116,10 +120,24 @@ export function CaseRegistrationPage() {
           {select('Follow Up', 'followUp', yn as [string, string][], 120)}
           {select('Condition will recur', 'recur', yn as [string, string][], 170)}
           {select('Follow-up required', 'followReq', yn as [string, string][], 170)}
+          {text('Deduction Amount (reduces available limit)', 'deduction', { type: 'number', sx: { width: 300 } })}
         </Paper>
-        {(['first', 'final'] as const).map((which) => (
+        {repudiating && (
+          <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            <Typography variant="subtitle2" sx={{ width: '100%' }}>Repudiation</Typography>
+            {f.rep.map((c, i) => (
+              <Autocomplete key={i} size="small" sx={{ width: 380 }} options={options.data?.repudiation ?? []} getOptionLabel={(o) => `${o.code} - ${o.name}`} value={(options.data?.repudiation ?? []).find((o) => o.code === c) ?? null}
+                onChange={(_, v) => setF((x) => ({ ...x, rep: x.rep.map((r, j) => (j === i ? v?.code ?? '' : r)) }))} renderInput={(p) => <TextField {...p} label={`Repudiate Code ${i + 1}`} required={i === 0} />} />
+            ))}
+            {select('Documents', 'document', opt(options.data?.repudiationSelections.filter((s) => s.code.startsWith('D'))), 340, true)}
+            {select('Personnel', 'personnel', opt(options.data?.repudiationSelections.filter((s) => s.code.startsWith('P'))), 260, true)}
+            {select('Attention', 'attention', opt(options.data?.repudiationSelections.filter((s) => s.code.startsWith('A'))), 420, true)}
+            {select('Underlying', 'underlying', [['N', 'N - No'], ['Y', 'Y - Yes']], 140)}
+          </Paper>
+        )}
+        {(['first', 'final', 'ud'] as const).map((which) => (
           <Paper key={which} variant="outlined" sx={{ p: 1.5, display: 'grid', gap: 1 }}>
-            <Typography variant="subtitle2">{which === 'first' ? 'Preliminary diagnosis (ICD)' : 'Final diagnosis (ICD)'}</Typography>
+            <Typography variant="subtitle2">{which === 'first' ? 'Preliminary diagnosis (ICD)' : which === 'final' ? 'Final diagnosis (ICD)' : 'Underlying illness (ICD)'}</Typography>
             {f[which].map((d, i) => (
               <Box key={i} sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
                 <Autocomplete size="small" sx={{ width: 420 }} options={options.data?.icd ?? []} getOptionLabel={(o) => `${o.code} - ${o.name}`} value={(options.data?.icd ?? []).find((o) => o.code === d.code) ?? null}
@@ -136,7 +154,7 @@ export function CaseRegistrationPage() {
         </Paper>
       </Box>
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-        <Typography variant="body2" sx={{ flexGrow: 1 }}>* - Mandatory Fields. Repudiated statuses, take-over limits, benefits and letters are not migrated yet.</Typography>
+        <Typography variant="body2" sx={{ flexGrow: 1 }}>* - Mandatory Fields. Benefits, doctors, procedures and the Word letters are not migrated yet.</Typography>
         <Button variant="contained" disabled={!member || blocked || register.isPending} onClick={() => { setMessage(null); setConfirming(true) }}>Register</Button>
       </Box>
       <Dialog open={confirming} onClose={() => setConfirming(false)}><DialogTitle>Register case</DialogTitle><DialogContent><DialogContentText>Are you sure?</DialogContentText></DialogContent>
@@ -146,3 +164,4 @@ export function CaseRegistrationPage() {
     </Box>
   )
 }
+

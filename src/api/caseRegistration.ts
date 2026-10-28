@@ -1,7 +1,7 @@
 ﻿import { api } from './client'
 
 export interface CaseOption { code: string; name: string }
-export interface CaseRegistrationOptions { claimability: CaseOption[]; hospitals: CaseOption[]; payTypes: CaseOption[]; stayTypes: CaseOption[]; modalities: CaseOption[]; natures: CaseOption[]; specialApprovals: CaseOption[]; icd: CaseOption[] }
+export interface CaseRegistrationOptions { claimability: CaseOption[]; hospitals: CaseOption[]; payTypes: CaseOption[]; stayTypes: CaseOption[]; modalities: CaseOption[]; natures: CaseOption[]; specialApprovals: CaseOption[]; icd: CaseOption[]; repudiation: CaseOption[]; repudiationSelections: CaseOption[] }
 export interface CasePatient { coverId: string; name: string; icBcPp: string | null; relation: string; birthDate: string | null }
 export interface CaseMemberView {
   memberNumber: string; name: string; icBcPp: string | null; policyNo: string | null; health: string | null; insured: string | null; plan: string | null; payor: string | null; status: string | null; birthDate: string | null
@@ -14,6 +14,7 @@ export interface CaseRegistrationRequest {
   admissionReason: string | null; docReceivedDate: string | null; policyYear: number | null; espRefNo: string | null; takeOverInd: string | null; takeOverAmount: number | null; takeOverPlan: string | null; intExtTakeOver: string | null
   patientAge: string | null; ageUnit: string | null; firstCall: string | null; firstTreated: string | null; payPending: string | null; followUp: string | null; conditionWillRecur: string | null; followUpRequired: string | null
   remarks: string[]; firstDiagnosis: CaseDiagnosis[]; finalDiagnosis: CaseDiagnosis[]; acknowledgeLongStay: boolean; acknowledgeRecentPolicy: boolean; acknowledgeOpenCase: boolean
+  repudiationCodes: string[] | null; document: string | null; personnel: string | null; attention: string | null; underlying: boolean; underlyingDiagnosis: CaseDiagnosis[]; deductionAmount: number | null
 }
 
 const base = '/api/case-registration'
@@ -23,3 +24,4 @@ export const caseRegistrationApi = {
   member: (memberNumber: string) => api.get<CaseMemberView>(`${base}/member?memberNumber=${encodeURIComponent(memberNumber)}`),
   register: (r: CaseRegistrationRequest) => api.post<{ caseNumber: string; memberNumber: string; patientId: string; message: string }>(base, r),
 }
+
