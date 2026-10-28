@@ -25,3 +25,12 @@ export const fwhsInvoiceApi = {
   list: (q: FwhsInvoiceQuery) => api.get<FwhsInvoiceListing>(`/api/mco/fwhs-invoice?${new URLSearchParams(Object.entries(q).filter(([, v]) => v)).toString()}`),
   invoice: (q: FwhsInvoiceQuery) => api.post<{ invoiceNo: string; rowsInvoiced: number; listing: FwhsInvoiceListing }>('/api/mco/fwhs-invoice', { payor: q.payor, mode: 'new', from: q.from || null, to: q.to || null, invoiceNo: null, tax: q.tax }),
 }
+
+export interface McoManualFilter { payor: string; memberFrom: string | null; memberTo: string | null; bordxFrom: string | null; bordxTo: string | null; batchFrom: number | null; batchTo: number | null }
+export interface McoManualRow { memberNumber: string; coverId: string; bordxDate: string | null; batchNo: number | null; mco: number }
+export interface McoManualListing { rows: McoManualRow[]; totalMco: number; hasZeroMco: boolean; truncated: boolean }
+
+export const mcoManualApi = {
+  search: (f: McoManualFilter) => api.post<McoManualListing>('/api/mco/manual-invoice/search', f),
+  update: (filter: McoManualFilter, invoiceNo: string, invoiceDate: string) => api.post<{ updated: number; invoiceNo: string }>('/api/mco/manual-invoice/update', { filter, invoiceNo, invoiceDate }),
+}

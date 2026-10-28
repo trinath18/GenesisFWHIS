@@ -22,6 +22,7 @@ import { BenefitListingPage } from './features/maintenance/BenefitListingPage'
 import { IcdSelectionPage } from './features/maintenance/IcdSelectionPage'
 import { McoRefundListingPage } from './features/membership/McoRefundListingPage'
 import { FwhsInvoicePage } from './features/membership/FwhsInvoicePage'
+import { McoManualInvoicePage } from './features/membership/McoManualInvoicePage'
 import { ReinstatementPage } from './features/membership/ReinstatementPage'
 import { navigation } from './config/navigation'
 
@@ -92,6 +93,9 @@ export default function App() {
           <Route element={<RequireScreen position={byPath['/mco/fwhs-invoice-sst']} />}>
             <Route path="mco/fwhs-invoice-sst" element={<FwhsInvoicePage tax="sst" />} />
           </Route>
+          <Route element={<RequireScreen position={byPath['/mco/manual-invoice']} />}>
+            <Route path="mco/manual-invoice" element={<McoManualInvoicePage />} />
+          </Route>
           <Route element={<RequireScreen position={byPath['/hospitals']} />}>
             <Route path="hospitals" element={<HospitalsPage />} />
           </Route>
@@ -101,6 +105,7 @@ export default function App() {
     </Routes>
   )
 }
+
 
 
 

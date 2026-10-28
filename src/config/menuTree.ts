@@ -192,10 +192,8 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Invoice Manual Upd",
-                             "positions":  [
-                                               148
-                                           ],
-                             "legacyForm":  "frmMCOManualUpd"
+                             "route":  "/mco/manual-invoice",
+                             "positions":  148
                          },
                          {
                              "label":  "Receipt MCO/Others",
