@@ -179,10 +179,8 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Refund Listing",
-                             "positions":  [
-                                               21
-                                           ],
-                             "legacyForm":  "frmMCORefundListing2"
+                             "route":  "/mco/refund-listing",
+                             "positions":  21
                          },
                          {
                              "label":  "MCO Correction",
