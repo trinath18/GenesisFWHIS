@@ -1,6 +1,8 @@
 ﻿import { Alert, Autocomplete, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, MenuItem, Paper, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
+import { CaseAfterRegistration } from './CaseAfterRegistration'
+import { CaseRegistrationTabs } from './CaseRegistrationTabs'
 import { ApiError } from '../../api/client'
 import { caseRegistrationApi, type CaseDiagnosis, type CaseMemberView, type CaseRegistrationRequest } from '../../api/caseRegistration'
 import { DateField } from '../../components/DateField'
@@ -13,11 +15,12 @@ const blank = {
   referredBy: '', reason: '', docDate: '', policyYear: '', esp: '', takeOverInd: 'N', takeOverAmt: '', takeOverPlan: '', intExt: '', age: '', ageUnit: 'Y', firstCall: '', firstTreated: '', payPending: 'N', followUp: 'N', recur: 'N', followReq: 'N',
   remarks: ['', '', '', '', ''], first: [{ code: '', text: '', date: '' }, { code: '', text: '', date: '' }, { code: '', text: '', date: '' }], final: [{ code: '', text: '', date: '' }, { code: '', text: '', date: '' }, { code: '', text: '', date: '' }],
   ud: [{ code: '', text: '', date: '' }, { code: '', text: '', date: '' }, { code: '', text: '', date: '' }], rep: ['', '', ''], document: '', personnel: '', attention: '', underlying: 'N', deduction: '',
+  docs: ['', '', '', '', ''], anae: ['', '', ''], procs: Array.from({ length: 6 }, () => ({ text: '', cpt: '' })), nons: Array.from({ length: 6 }, () => ({ text: '', cpt: '' })), invs: Array.from({ length: 3 }, () => ({ done: '', code: '' })), med: ['', '', ''], firstDoc: '', subDoc: '',
 }
 type Form = typeof blank
 const dmyText = (iso: string) => (iso ? toDmy(iso) : null)
 
-/** Legacy: Case > Case Registration (frmCaseAdmission), policy lookup, patient, case details, remarks, first / final / underlying diagnoses, repudiation and the limit deduction. Benefits, doctors, procedures and the Word letters are not migrated yet. */
+/** Legacy: Case > Case Registration (frmCaseAdmission), policy lookup, patient, case details, remarks, first / final / underlying diagnoses, repudiation and the limit deduction.  */
 export function CaseRegistrationPage() {
   const options = useQuery({ queryKey: ['case-reg-options'], queryFn: caseRegistrationApi.options })
   const [number, setNumber] = useState('')
@@ -29,6 +32,7 @@ export function CaseRegistrationPage() {
   const [ack, setAck] = useState({ long: false, recent: false, open: false })
   const [prompt, setPrompt] = useState<{ text: string; next: Partial<typeof ack> } | null>(null)
   const [confirming, setConfirming] = useState(false)
+  const [registered, setRegistered] = useState<{ caseNumber: string; letters: string[]; lg: number | null; lgTime: string | null } | null>(null)
 
   const show = useMutation({
     mutationFn: () => caseRegistrationApi.member(number.trim()),
@@ -45,10 +49,12 @@ export function CaseRegistrationPage() {
     firstDiagnosis: f.first.map(diag), finalDiagnosis: f.final.map(diag), acknowledgeLongStay: a.long, acknowledgeRecentPolicy: a.recent, acknowledgeOpenCase: a.open,
     repudiationCodes: repudiating ? f.rep.filter(Boolean) : null, document: repudiating ? f.document || null : null, personnel: repudiating ? f.personnel || null : null, attention: repudiating ? f.attention || null : null, underlying: f.underlying === 'Y',
     underlyingDiagnosis: f.ud.map(diag), deductionAmount: f.deduction === '' ? null : Number(f.deduction),
+    attendingDoctors: f.docs.filter(Boolean), anaesthetists: f.anae.filter(Boolean), procedures: f.procs.filter((p) => p.text || p.cpt).map((p) => ({ text: p.text || null, cptCode: p.cpt || null })), nonSurgicalProcedures: f.nons.filter((p) => p.text || p.cpt).map((p) => ({ text: p.text || null, cptCode: p.cpt || null })),
+    investigations: f.invs.filter((i) => i.done || i.code).map((i) => ({ done: i.done || null, code: i.code || null })), medicalManagement: f.med.filter(Boolean), firstDocDate: f.firstDoc || null, subsequentDocDate: f.subDoc || null,
   })
   const register = useMutation({
     mutationFn: (a: typeof ack) => caseRegistrationApi.register(request(a)),
-    onSuccess: (r) => { setConfirming(false); setPrompt(null); setMessage({ severity: 'success', text: r.message }); setMember(null); setNumber(''); setF(blank); setAck({ long: false, recent: false, open: false }) },
+    onSuccess: (r) => { setConfirming(false); setPrompt(null); setMessage({ severity: 'success', text: r.message }); setRegistered({ caseNumber: r.caseNumber, letters: r.letters, lg: f.lg === '' ? null : Number(f.lg), lgTime: f.lgTime || null }); setMember(null); setNumber(''); setF(blank); setAck({ long: false, recent: false, open: false }) },
     onError: (e) => {
       setConfirming(false)
       if (e instanceof ApiError && e.status === 409) {
@@ -77,6 +83,7 @@ export function CaseRegistrationPage() {
         <Button variant="outlined" onClick={() => { setNumber(''); setMember(null); setF(blank); setMessage(null) }}>Clear</Button>
         {member && <Typography variant="body2" sx={{ alignSelf: 'center' }}>{member.name} &nbsp;|&nbsp; IC {member.icBcPp} &nbsp;|&nbsp; Policy {member.policyNo} &nbsp;|&nbsp; Plan {member.insured}/{member.plan} &nbsp;|&nbsp; Status {member.status} &nbsp;|&nbsp; {toDmy(member.effectiveDate ?? '')} - {toDmy(member.expiryDate ?? '')} &nbsp;|&nbsp; Available limit {formatMoney(member.availableLimit)}{member.topUp ? ' (top-up)' : ''}</Typography>}
       </Paper>
+      {registered && <CaseAfterRegistration key={registered.caseNumber} caseNumber={registered.caseNumber} letters={registered.letters} lgAmount={registered.lg} lgTime={registered.lgTime} onDone={() => setRegistered(null)} />}
       {member?.planMessage && <Alert severity="info">{member.planMessage}</Alert>}
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 1.5, opacity: member && !blocked ? 1 : 0.5, pointerEvents: member && !blocked ? 'auto' : 'none' }}>
         <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-start' }}>
@@ -148,13 +155,42 @@ export function CaseRegistrationPage() {
             ))}
           </Paper>
         ))}
+        <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          <Typography variant="subtitle2" sx={{ width: '100%' }}>Doctors</Typography>
+          {f.docs.map((d, i) => <TextField key={i} size="small" label={`Attending doctor ${i + 1}`} value={d} sx={{ width: 240 }} onChange={(e) => setF((x) => ({ ...x, docs: x.docs.map((v, j) => (j === i ? e.target.value : v)) }))} slotProps={{ htmlInput: { maxLength: i === 0 ? 100 : 30 } }} />)}
+          {f.anae.map((d, i) => <TextField key={i} size="small" label={`Anaesthetist ${i + 1}`} value={d} sx={{ width: 240 }} onChange={(e) => setF((x) => ({ ...x, anae: x.anae.map((v, j) => (j === i ? e.target.value : v)) }))} slotProps={{ htmlInput: { maxLength: 30 } }} />)}
+          <DateField label="First doctor date" value={f.firstDoc} onChange={(iso) => setF((x) => ({ ...x, firstDoc: iso }))} />
+          <DateField label="Subsequent doctor date" value={f.subDoc} onChange={(iso) => setF((x) => ({ ...x, subDoc: iso }))} />
+        </Paper>
+        {([['procs', 'Surgical procedures', 500], ['nons', 'Non-surgical procedures', 200]] as const).map(([key, title, max]) => (
+          <Paper key={key} variant="outlined" sx={{ p: 1.5, display: 'grid', gap: 1 }}>
+            <Typography variant="subtitle2">{title} (procedure and CPT code)</Typography>
+            {f[key].map((p, i) => (
+              <Box key={i} sx={{ display: 'flex', gap: 1.5 }}>
+                <TextField size="small" label={`Procedure ${i + 1}`} value={p.text} sx={{ flex: 1 }} onChange={(e) => setF((x) => ({ ...x, [key]: x[key].map((v, j) => (j === i ? { ...v, text: e.target.value } : v)) }))} slotProps={{ htmlInput: { maxLength: max } }} />
+                <TextField size="small" label="CPT" value={p.cpt} sx={{ width: 110 }} onChange={(e) => setF((x) => ({ ...x, [key]: x[key].map((v, j) => (j === i ? { ...v, cpt: e.target.value } : v)) }))} slotProps={{ htmlInput: { maxLength: 6 } }} />
+              </Box>
+            ))}
+          </Paper>
+        ))}
+        <Paper variant="outlined" sx={{ p: 1.5, display: 'grid', gap: 1 }}>
+          <Typography variant="subtitle2">Investigations and medical management</Typography>
+          {f.invs.map((p, i) => (
+            <Box key={i} sx={{ display: 'flex', gap: 1.5 }}>
+              <TextField size="small" label={`Investigation ${i + 1}`} value={p.done} sx={{ flex: 1 }} onChange={(e) => setF((x) => ({ ...x, invs: x.invs.map((v, j) => (j === i ? { ...v, done: e.target.value } : v)) }))} slotProps={{ htmlInput: { maxLength: 500 } }} />
+              <TextField size="small" label="Code" value={p.code} sx={{ width: 120 }} onChange={(e) => setF((x) => ({ ...x, invs: x.invs.map((v, j) => (j === i ? { ...v, code: e.target.value } : v)) }))} slotProps={{ htmlInput: { maxLength: 10 } }} />
+            </Box>
+          ))}
+          {f.med.map((m, i) => <TextField key={i} size="small" label={`Medical management ${i + 1}`} value={m} onChange={(e) => setF((x) => ({ ...x, med: x.med.map((v, j) => (j === i ? e.target.value : v)) }))} slotProps={{ htmlInput: { maxLength: 500 } }} />)}
+        </Paper>
+        {member && <CaseRegistrationTabs memberNumber={member.memberNumber} />}
         <Paper variant="outlined" sx={{ p: 1.5, display: 'grid', gap: 1 }}>
           <Typography variant="subtitle2">Remarks</Typography>
           {f.remarks.map((r, i) => <TextField key={i} size="small" label={`Remark ${i + 1}`} value={r} multiline minRows={1} onChange={(e) => setF((x) => ({ ...x, remarks: x.remarks.map((v, j) => (j === i ? e.target.value : v)) }))} slotProps={{ htmlInput: { maxLength: 3900 } }} />)}
         </Paper>
       </Box>
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-        <Typography variant="body2" sx={{ flexGrow: 1 }}>* - Mandatory Fields. Benefits, doctors, procedures and the Word letters are not migrated yet.</Typography>
+        <Typography variant="body2" sx={{ flexGrow: 1 }}>* - Mandatory Fields. </Typography>
         <Button variant="contained" disabled={!member || blocked || register.isPending} onClick={() => { setMessage(null); setConfirming(true) }}>Register</Button>
       </Box>
       <Dialog open={confirming} onClose={() => setConfirming(false)}><DialogTitle>Register case</DialogTitle><DialogContent><DialogContentText>Are you sure?</DialogContentText></DialogContent>
@@ -164,4 +200,5 @@ export function CaseRegistrationPage() {
     </Box>
   )
 }
+
 
