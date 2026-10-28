@@ -5,13 +5,13 @@ import { icdSelectionApi, type IcdCodeRow } from '../../api/icdSelection'
 
 function Pane({ title, rows, selected, onToggle, total }: { title: string; rows: IcdCodeRow[]; selected: Set<string>; onToggle: (code: string) => void; total: number }) {
   return (
-    <Paper variant="outlined" sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+    <Paper variant="outlined" sx={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
       <Typography variant="subtitle2" sx={{ p: 1, color: 'error.main', fontWeight: 700 }}>{title} ({total})</Typography>
-      <Box sx={{ display: 'flex', px: 1.5, py: 0.5, borderBottom: 1, borderColor: 'divider', fontSize: 13, fontWeight: 600 }}><Box sx={{ width: 90 }}>ICD Code</Box><Box>ICD Description</Box></Box>
-      <List dense disablePadding sx={{ flex: 1, overflow: 'auto' }}>
+      <Box sx={{ display: 'flex', px: 1.5, py: 0.5, borderBottom: 1, borderColor: 'divider', fontSize: 13, fontWeight: 600 }}><Box sx={{ width: 90, flexShrink: 0 }}>ICD Code</Box><Box>ICD Description</Box></Box>
+      <List dense disablePadding sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
         {rows.map((r) => (
           <ListItemButton key={r.code} selected={selected.has(r.code)} onClick={() => onToggle(r.code)} sx={{ py: 0 }}>
-            <Box sx={{ width: 90, flexShrink: 0 }}>{r.code}</Box><ListItemText primary={r.description} slotProps={{ primary: { variant: 'body2', noWrap: true } }} />
+            <Box sx={{ width: 90, flexShrink: 0 }}>{r.code}</Box><ListItemText sx={{ minWidth: 0 }} primary={r.description} title={r.description ?? ''} slotProps={{ primary: { variant: 'body2', noWrap: true } }} />
           </ListItemButton>
         ))}
         {rows.length === 0 && <Typography variant="body2" sx={{ p: 1.5 }} color="text.secondary">No ICD codes.</Typography>}
@@ -37,7 +37,7 @@ export function IcdSelectionPage() {
   const v = view.data
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 1.5 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', minWidth: 0, gap: 1.5 }}>
       <Typography variant="h5">Case Maintenance - ICD Selection</Typography>
       {message && <Alert severity={message.severity} onClose={() => setMessage(null)}>{message.text}</Alert>}
       <Box component="form" onSubmit={(e) => { e.preventDefault(); setApplied(search) }} sx={{ display: 'flex', gap: 1 }}>
@@ -45,11 +45,11 @@ export function IcdSelectionPage() {
         <Button type="submit" variant="outlined">Search</Button>
         <Button variant="outlined" onClick={() => { setSearch(''); setApplied('') }}>Clear</Button>
       </Box>
-      <Box sx={{ flex: 1, minHeight: 0, display: 'flex', gap: 2, alignItems: 'stretch' }}>
+      <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', gap: 2, alignItems: 'stretch' }}>
         <Pane title="Original ICD Code" rows={v?.available ?? []} selected={left} onToggle={toggle(left, setLeft)} total={v?.availableTotal ?? 0} />
-        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 1 }}>
-          <Button variant="contained" disabled={left.size === 0 || select.isPending} onClick={() => select.mutate()}>Select &gt;</Button>
-          <Button variant="outlined" disabled={right.size === 0 || unselect.isPending} onClick={() => unselect.mutate()}>&lt; Unselect</Button>
+        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 1.5, flexShrink: 0, width: 130 }}>
+          <Button fullWidth variant="contained" sx={{ height: 40, whiteSpace: 'nowrap' }} disabled={left.size === 0 || select.isPending} onClick={() => select.mutate()}>Select &gt;</Button>
+          <Button fullWidth variant="contained" color="secondary" sx={{ height: 40, whiteSpace: 'nowrap' }} disabled={right.size === 0 || unselect.isPending} onClick={() => unselect.mutate()}>&lt; Unselect</Button>
         </Box>
         <Pane title="ICD Code Applied" rows={v?.applied ?? []} selected={right} onToggle={toggle(right, setRight)} total={v?.appliedTotal ?? 0} />
       </Box>
@@ -57,3 +57,4 @@ export function IcdSelectionPage() {
     </Box>
   )
 }
+
