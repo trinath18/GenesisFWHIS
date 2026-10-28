@@ -28,8 +28,10 @@ export const navigation: NavItem[] = [
   { path: '/mco/fwhs-invoice-gst', label: 'MCO Inv/Listing GST', position: 20 },
   { path: '/mco/fwhs-invoice-sst', label: 'MCO Inv/Listing SST', position: 20 },
   { path: '/mco/manual-invoice', label: 'Invoice Manual Upd', position: 148 },
+  { path: '/mco/correction', label: 'MCO Correction', position: 20 },
   { path: '/hospitals', label: 'Hospitals (report demo)', position: 3 },
 ]
+
 
 
 

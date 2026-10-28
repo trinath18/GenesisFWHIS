@@ -34,3 +34,11 @@ export const mcoManualApi = {
   search: (f: McoManualFilter) => api.post<McoManualListing>('/api/mco/manual-invoice/search', f),
   update: (filter: McoManualFilter, invoiceNo: string, invoiceDate: string) => api.post<{ updated: number; invoiceNo: string }>('/api/mco/manual-invoice/update', { filter, invoiceNo, invoiceDate }),
 }
+
+export interface McoCorrectionRow { memberNumber: string; coverId: string; name: string | null; bordxDate: string | null; batchNo: number | null; invoiceNo: string | null; invoiceDate: string | null; mco: number | null; payorEffective: string | null; payorExpiry: string | null }
+export interface McoCorrectionListing { rows: McoCorrectionRow[]; truncated: boolean }
+
+export const mcoCorrectionApi = {
+  search: (f: McoManualFilter) => api.post<McoCorrectionListing>('/api/mco/correction/search', f),
+  update: (items: { memberNumber: string; coverId: string }[], fee: number) => api.post<{ updated: number; fee: number }>('/api/mco/correction/update', { items, fee }),
+}

@@ -178,10 +178,8 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "MCO Correction",
-                             "positions":  [
-                                               20
-                                           ],
-                             "legacyForm":  "frmMCOCorrection"
+                             "route":  "/mco/correction",
+                             "positions":  20
                          },
                          {
                              "label":  "Date Correction",
