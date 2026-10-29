@@ -35,8 +35,12 @@ export const navigation: NavItem[] = [
   { path: '/mco/date-correction', label: 'Date Correction', position: 20 },
   { path: '/cases/registration', label: 'Case Registration', position: 11 },
   { path: '/cases/adjustment', label: 'Case Adjustment', position: 12 },
+  { path: '/cases/transfer', label: 'Case Transfer', position: 11 },
+  { path: '/cases/temp-transfer', label: 'Temp Case Transfer', position: 11 },
+  { path: '/cases/payclaim', label: 'Case PayClaim', position: 11 },
   { path: '/hospitals', label: 'Hospitals (report demo)', position: 3 },
 ]
+
 
 
 

@@ -228,10 +228,8 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Case Transfer",
-                             "positions":  [
-                                               11
-                                           ],
-                             "legacyForm":  "frmCaseTransferMBMNo"
+                             "route":  "/cases/transfer",
+                             "positions":  11
                          },
                          {
                              "label":  "Panel Hospitals",
@@ -240,10 +238,8 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Temp Case Transfer",
-                             "positions":  [
-                                               11
-                                           ],
-                             "legacyForm":  "FrmTempCaseTransfer"
+                             "route":  "/cases/temp-transfer",
+                             "positions":  11
                          },
                          {
                              "label":  "Lifetime Lmt Upgrade",
@@ -283,10 +279,8 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Case PayClaim",
-                             "positions":  [
-                                               11
-                                           ],
-                             "legacyForm":  "frmCASPayClaim"
+                             "route":  "/cases/payclaim",
+                             "positions":  11
                          },
                          {
                              "label":  "Non-Disclousre Info",

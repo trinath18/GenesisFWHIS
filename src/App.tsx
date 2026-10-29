@@ -27,6 +27,8 @@ import { McoCorrectionPage } from './features/membership/McoCorrectionPage'
 import { McoReceiptPage } from './features/membership/McoReceiptPage'
 import { McoReinstatementPage } from './features/membership/McoReinstatementPage'
 import { CaseRegistrationPage } from './features/cases/CaseRegistrationPage'
+import { CaseTransferPage } from './features/cases/CaseTransferPage'
+import { CasePayClaimPage } from './features/cases/CasePayClaimPage'
 import { McoDateCorrectionPage } from './features/membership/McoDateCorrectionPage'
 import { ReinstatementPage } from './features/membership/ReinstatementPage'
 import { navigation } from './config/navigation'
@@ -122,6 +124,15 @@ export default function App() {
           <Route element={<RequireScreen position={byPath['/cases/adjustment']} />}>
             <Route path="cases/adjustment" element={<CaseRegistrationPage mode="adjust" />} />
           </Route>
+          <Route element={<RequireScreen position={byPath['/cases/transfer']} />}>
+            <Route path="cases/transfer" element={<CaseTransferPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/cases/temp-transfer']} />}>
+            <Route path="cases/temp-transfer" element={<CaseTransferPage temporary />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/cases/payclaim']} />}>
+            <Route path="cases/payclaim" element={<CasePayClaimPage />} />
+          </Route>
           <Route element={<RequireScreen position={byPath['/hospitals']} />}>
             <Route path="hospitals" element={<HospitalsPage />} />
           </Route>
@@ -131,6 +142,7 @@ export default function App() {
     </Routes>
   )
 }
+
 
 
 
