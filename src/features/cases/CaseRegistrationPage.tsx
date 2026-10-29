@@ -3,6 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { CaseAfterRegistration } from './CaseAfterRegistration'
 import { CaseRegistrationTabs } from './CaseRegistrationTabs'
+import { CaseSearchDialog } from './CaseSearchDialog'
 import { ApiError } from '../../api/client'
 import { caseAdjustmentApi, caseRegistrationApi, type CaseDiagnosis, type CaseMemberView, type CaseRegistrationRequest } from '../../api/caseRegistration'
 import { DateField } from '../../components/DateField'
@@ -47,6 +48,7 @@ export function CaseRegistrationPage({ mode = 'register' }: { mode?: 'register' 
   const [prompt, setPrompt] = useState<{ text: string; next: Partial<typeof ack> } | null>(null)
   const [confirming, setConfirming] = useState(false)
   const [caseNo, setCaseNo] = useState('')
+  const [searching, setSearching] = useState(false)
   const [status, setStatus] = useState('O')
   const [adjusted, setAdjusted] = useState<{ no: string; by: string | null; on: string | null } | null>(null)
   const [registered, setRegistered] = useState<{ caseNumber: string; letters: string[]; lg: number | null; lgTime: string | null } | null>(null)
@@ -117,6 +119,7 @@ export function CaseRegistrationPage({ mode = 'register' }: { mode?: 'register' 
         <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', gap: 1.5, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <TextField size="small" label="Case No" value={caseNo} onChange={(e) => setCaseNo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && caseNo.trim()) load.mutate(caseNo) }} slotProps={{ htmlInput: { maxLength: 15 } }} />
           <Button variant="contained" disabled={!caseNo.trim() || load.isPending} onClick={() => load.mutate(caseNo)}>Show</Button>
+          <Button variant="outlined" onClick={() => setSearching(true)}>Search</Button>
           <Button variant="outlined" disabled={!adjusted || step.isPending} onClick={() => step.mutate('previous')}>Pre</Button>
           <Button variant="outlined" disabled={!adjusted || step.isPending} onClick={() => step.mutate('next')}>Next</Button>
           <TextField select size="small" label="Status" value={status} onChange={(e) => setStatus(e.target.value)} sx={{ width: 140 }} disabled={!adjusted}>{[['O', 'O - Open'], ['C', 'C - Close'], ['D', 'D - Delete']].map(([c, n]) => <MenuItem key={c} value={c}>{n}</MenuItem>)}</TextField>
@@ -231,7 +234,7 @@ export function CaseRegistrationPage({ mode = 'register' }: { mode?: 'register' 
           ))}
           {f.med.map((m, i) => <TextField key={i} size="small" label={`Medical management ${i + 1}`} value={m} onChange={(e) => setF((x) => ({ ...x, med: x.med.map((v, j) => (j === i ? e.target.value : v)) }))} slotProps={{ htmlInput: { maxLength: 500 } }} />)}
         </Paper>
-        {member && <CaseRegistrationTabs memberNumber={member.memberNumber} area={adjust ? 'adjustment' : 'registration'} />}
+        {member && <CaseRegistrationTabs memberNumber={member.memberNumber} area={adjust ? 'adjustment' : 'registration'} caseNumber={adjust ? adjusted?.no : undefined} lgAmount={adjust && f.lg ? Number(f.lg) : null} />}
         <Paper variant="outlined" sx={{ p: 1.5, display: 'grid', gap: 1 }}>
           <Typography variant="subtitle2">Remarks</Typography>
           {f.remarks.map((r, i) => <TextField key={i} size="small" label={`Remark ${i + 1}`} value={r} multiline minRows={1} onChange={(e) => setF((x) => ({ ...x, remarks: x.remarks.map((v, j) => (j === i ? e.target.value : v)) }))} slotProps={{ htmlInput: { maxLength: 3900 } }} />)}
@@ -241,6 +244,7 @@ export function CaseRegistrationPage({ mode = 'register' }: { mode?: 'register' 
         <Typography variant="body2" sx={{ flexGrow: 1 }}>* - Mandatory Fields. </Typography>
         <Button variant="contained" disabled={!member || blocked || register.isPending || update.isPending || (adjust && !adjusted)} onClick={() => { setMessage(null); setConfirming(true) }}>{adjust ? 'Update' : 'Register'}</Button>
       </Box>
+      {adjust && <CaseSearchDialog open={searching} onClose={() => setSearching(false)} onPick={(no) => { setSearching(false); load.mutate(no) }} />}
       <Dialog open={confirming} onClose={() => setConfirming(false)}><DialogTitle>{adjust ? 'Update case' : 'Register case'}</DialogTitle><DialogContent><DialogContentText>Are you sure?</DialogContentText></DialogContent>
         <DialogActions><Button onClick={() => setConfirming(false)}>No</Button><Button variant="contained" disabled={register.isPending || update.isPending} onClick={() => (adjust ? update.mutate(ack) : register.mutate(ack))}>Yes</Button></DialogActions></Dialog>
       <Dialog open={!!prompt} onClose={() => setPrompt(null)}><DialogTitle>Please confirm</DialogTitle><DialogContent><DialogContentText>{prompt?.text}</DialogContentText></DialogContent>
@@ -248,6 +252,7 @@ export function CaseRegistrationPage({ mode = 'register' }: { mode?: 'register' 
     </Box>
   )
 }
+
 
 
 

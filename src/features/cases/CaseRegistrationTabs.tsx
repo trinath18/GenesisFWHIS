@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { memberTabsApi } from '../../api/caseRegistration'
+import { CaseLgTab, CaseWorksheetTab } from './CaseAdjustmentTabs'
 import { download } from '../../lib/download'
 import { toDmy } from '../../lib/dates'
 
@@ -20,7 +21,7 @@ function Grid({ head, rows }: { head: string[]; rows: (string | number | null | 
 }
 
 /** The read-only tabs of the legacy Case Registration form: Benefit, MBM'Ship History, Warranty, Non-Disclosure, Case Mgmt Notes, Policy Terms, Surgical Schedule and Policy Wording. */
-export function CaseRegistrationTabs({ memberNumber, area = 'registration' }: { memberNumber: string; area?: 'registration' | 'adjustment' }) {
+export function CaseRegistrationTabs({ memberNumber, area = 'registration', caseNumber, lgAmount = null }: { memberNumber: string; area?: 'registration' | 'adjustment'; caseNumber?: string; lgAmount?: number | null }) {
   const [tab, setTab] = useState(0)
   const caseRegistrationApi = memberTabsApi(area)
   const q = { staleTime: 60_000 }
@@ -34,8 +35,8 @@ export function CaseRegistrationTabs({ memberNumber, area = 'registration' }: { 
 
   return (
     <Paper variant="outlined" sx={{ minHeight: 160 }}>
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto">{tabs.map((t) => <Tab key={t} label={t} />)}</Tabs>
-      <Box sx={{ p: 1.5, maxHeight: 260, overflow: 'auto' }}>
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto">{[...tabs, ...(caseNumber ? ['LG', 'Worksheet'] : [])].map((t) => <Tab key={t} label={t} />)}</Tabs>
+      <Box sx={{ p: 1.5, maxHeight: 300, overflow: 'auto' }}>
         {err && <Alert severity="error">{err.message}</Alert>}
         {tab === 0 && benefits.data && (
           <>
@@ -61,6 +62,8 @@ export function CaseRegistrationTabs({ memberNumber, area = 'registration' }: { 
         {tab === 4 && extras.data && <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{extras.data.managementNote ?? 'No management note.'}</Typography>}
         {tab === 5 && terms.data && <Grid head={['Term', 'Value']} rows={terms.data.map((t) => [t.name, t.value])} />}
         {tab === 6 && extras.data && <Grid head={['Payor', 'Plan', 'Main category', 'Sub category', '%']} rows={extras.data.surgicalSchedule.map((s) => [s.payor, s.plan, s.mainCategory, s.subCategory, s.percent])} />}
+        {tab === 8 && caseNumber && <CaseLgTab caseNumber={caseNumber} lgAmount={lgAmount} />}
+        {tab === 9 && caseNumber && <CaseWorksheetTab caseNumber={caseNumber} />}
         {tab === 7 && wording.data && (
           wording.data.files.length === 0
             ? <Typography variant="body2">{wording.data.storeConfigured ? 'No policy wording documents for this plan.' : 'The policy wording document store is not configured.'}</Typography>
@@ -70,4 +73,5 @@ export function CaseRegistrationTabs({ memberNumber, area = 'registration' }: { 
     </Paper>
   )
 }
+
 

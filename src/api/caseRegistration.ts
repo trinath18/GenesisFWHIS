@@ -62,3 +62,16 @@ export const caseAdjustmentApi = {
   previous: (c: string) => api.get<{ caseNumber: string }>(`${adj}/${encodeURIComponent(c)}/previous`),
   update: (c: string, status: string, form: CaseRegistrationRequest) => api.put<{ updated: boolean }>(`${adj}/${encodeURIComponent(c)}`, { status, form }),
 }
+
+export interface CaseLgItem { lgNumber: string; lgNo: number; letter: string; date: string | null; amount: number | null; patientId: string; patientName: string | null; admitted: string | null; hospital: string | null; issuedBy: string | null; remark: string | null; userTime: string | null; systemTime: string | null }
+export interface CaseWorksheetItem { version: number; totalApproved: number | null; totalActual: number | null; payableToHospital: number | null; payableToMember: number | null; bordxRefNo: string | null; bordxDate: string | null; bordxAmount: number | null; payorApprovalStatus: string | null; payorApprovalDate: string | null; payorApprovalCode: string | null; bordxReversalIndicator: string | null; cartonNo: string | null; sentDate: string | null; debitCreditRef: string | null; debitCreditDate: string | null; reversalBordxStatus: string | null }
+export interface CaseSearchItem { caseNumber: string; memberNumber: string; policyNo: string | null; memberName: string | null; admitted: string | null; discharged: string | null; status: string | null; hospitalCode: string | null; reserveAmount: number | null }
+export const caseAdjustmentTabsApi = {
+  search: (by: string, q: string) => api.get<{ items: CaseSearchItem[]; truncated: boolean }>(`${adj}/search?by=${by}&q=${encodeURIComponent(q)}`),
+  lgs: (c: string) => api.get<CaseLgItem[]>(`${adj}/${encodeURIComponent(c)}/lg`),
+  issueLg: (c: string, r: { amount: number | null; time: string | null; remark: string | null }) => api.post<CaseLgResult>(`${adj}/${encodeURIComponent(c)}/lg`, r),
+  lgRemark: (c: string, no: number, remark: string) => api.put<{ updated: boolean }>(`${adj}/${encodeURIComponent(c)}/lg/${no}/remark`, { remark }),
+  lgLetter: (c: string, no: number) => api.blob(`${adj}/${encodeURIComponent(c)}/lg/${no}/letter`),
+  worksheets: (c: string) => api.get<CaseWorksheetItem[]>(`${adj}/${encodeURIComponent(c)}/worksheets`),
+  approve: (c: string, version: number, r: { approvalDate: string | null; approvalCode: string | null; reversalIndicator: string | null; reversalStatus: string | null }) => api.put<{ updated: boolean }>(`${adj}/${encodeURIComponent(c)}/worksheets/${version}/approval`, r),
+}
