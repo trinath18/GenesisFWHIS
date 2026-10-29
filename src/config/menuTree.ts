@@ -218,10 +218,8 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Case Adjustment",
-                             "positions":  [
-                                               12
-                                           ],
-                             "legacyForm":  "frmCaseAdjustmentNew"
+                             "route":  "/cases/adjustment",
+                             "positions":  12
                          },
                          {
                              "label":  "Case Inquiry",

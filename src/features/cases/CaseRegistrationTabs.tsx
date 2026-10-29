@@ -1,7 +1,7 @@
 ﻿import { Alert, Box, Link, Paper, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { caseRegistrationApi } from '../../api/caseRegistration'
+import { memberTabsApi } from '../../api/caseRegistration'
 import { download } from '../../lib/download'
 import { toDmy } from '../../lib/dates'
 
@@ -20,15 +20,16 @@ function Grid({ head, rows }: { head: string[]; rows: (string | number | null | 
 }
 
 /** The read-only tabs of the legacy Case Registration form: Benefit, MBM'Ship History, Warranty, Non-Disclosure, Case Mgmt Notes, Policy Terms, Surgical Schedule and Policy Wording. */
-export function CaseRegistrationTabs({ memberNumber }: { memberNumber: string }) {
+export function CaseRegistrationTabs({ memberNumber, area = 'registration' }: { memberNumber: string; area?: 'registration' | 'adjustment' }) {
   const [tab, setTab] = useState(0)
+  const caseRegistrationApi = memberTabsApi(area)
   const q = { staleTime: 60_000 }
-  const benefits = useQuery({ queryKey: ['cr-benefits', memberNumber], queryFn: () => caseRegistrationApi.benefits(memberNumber), enabled: tab === 0, ...q })
-  const history = useQuery({ queryKey: ['cr-history', memberNumber], queryFn: () => caseRegistrationApi.history(memberNumber), enabled: tab === 1, ...q })
-  const extras = useQuery({ queryKey: ['cr-extras', memberNumber], queryFn: () => caseRegistrationApi.extras(memberNumber), enabled: tab === 2 || tab === 4 || tab === 6, ...q })
-  const nd = useQuery({ queryKey: ['cr-nd', memberNumber], queryFn: () => caseRegistrationApi.nonDisclosure(memberNumber), enabled: tab === 3, ...q })
-  const terms = useQuery({ queryKey: ['cr-terms', memberNumber], queryFn: () => caseRegistrationApi.policyTerms(memberNumber), enabled: tab === 5, ...q })
-  const wording = useQuery({ queryKey: ['cr-wording', memberNumber], queryFn: () => caseRegistrationApi.policyWording(memberNumber), enabled: tab === 7, ...q })
+  const benefits = useQuery({ queryKey: ['cr-benefits', area, memberNumber], queryFn: () => caseRegistrationApi.benefits(memberNumber), enabled: tab === 0, ...q })
+  const history = useQuery({ queryKey: ['cr-history', area, memberNumber], queryFn: () => caseRegistrationApi.history(memberNumber), enabled: tab === 1, ...q })
+  const extras = useQuery({ queryKey: ['cr-extras', area, memberNumber], queryFn: () => caseRegistrationApi.extras(memberNumber), enabled: tab === 2 || tab === 4 || tab === 6, ...q })
+  const nd = useQuery({ queryKey: ['cr-nd', area, memberNumber], queryFn: () => caseRegistrationApi.nonDisclosure(memberNumber), enabled: tab === 3, ...q })
+  const terms = useQuery({ queryKey: ['cr-terms', area, memberNumber], queryFn: () => caseRegistrationApi.policyTerms(memberNumber), enabled: tab === 5, ...q })
+  const wording = useQuery({ queryKey: ['cr-wording', area, memberNumber], queryFn: () => caseRegistrationApi.policyWording(memberNumber), enabled: tab === 7, ...q })
   const err = [benefits, history, extras, nd, terms, wording].find((x) => x.isError)?.error as Error | undefined
 
   return (
@@ -69,3 +70,4 @@ export function CaseRegistrationTabs({ memberNumber }: { memberNumber: string })
     </Paper>
   )
 }
+

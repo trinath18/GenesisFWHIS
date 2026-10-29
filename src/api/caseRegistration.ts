@@ -40,3 +40,25 @@ export const caseRegistrationApi = {
 }
 
 
+
+const tabsFor = (base: string) => ({
+  extras: (n: string) => api.get<CaseExtras>(`${base}/member/${encodeURIComponent(n)}/extras`),
+  benefits: (n: string) => api.get<MemberBenefits>(`${base}/member/${encodeURIComponent(n)}/benefits`),
+  history: (n: string) => api.get<MemberHistory>(`${base}/member/${encodeURIComponent(n)}/history`),
+  nonDisclosure: (n: string) => api.get<NonDisclosureItem[]>(`${base}/member/${encodeURIComponent(n)}/non-disclosure`),
+  policyTerms: (n: string) => api.get<PolicyTerm[]>(`${base}/member/${encodeURIComponent(n)}/policy-terms`),
+  policyWording: (n: string) => api.get<PolicyWordingListing>(`${base}/member/${encodeURIComponent(n)}/policy-wording`),
+  policyWordingFile: (n: string, file: string) => api.blob(`${base}/member/${encodeURIComponent(n)}/policy-wording/${encodeURIComponent(file)}`),
+})
+export const memberTabsApi = (area: 'registration' | 'adjustment') => tabsFor(area === 'registration' ? '/api/case-registration' : '/api/case-adjustment')
+
+export interface CaseAdjustmentView { caseNumber: string; status: string; member: CaseMemberView | null; patientName: string; form: CaseRegistrationRequest; hospitalName: string | null; lastUpdatedBy: string | null; lastUpdated: string | null; registered: string | null; openedBy: string | null }
+const adj = '/api/case-adjustment'
+export const caseAdjustmentApi = {
+  options: () => api.get<CaseRegistrationOptions>(`${adj}/options`),
+  hospitals: (search: string) => api.get<CaseOption[]>(`${adj}/hospitals?search=${encodeURIComponent(search)}`),
+  get: (c: string) => api.get<CaseAdjustmentView>(`${adj}/${encodeURIComponent(c)}`),
+  next: (c: string) => api.get<{ caseNumber: string }>(`${adj}/${encodeURIComponent(c)}/next`),
+  previous: (c: string) => api.get<{ caseNumber: string }>(`${adj}/${encodeURIComponent(c)}/previous`),
+  update: (c: string, status: string, form: CaseRegistrationRequest) => api.put<{ updated: boolean }>(`${adj}/${encodeURIComponent(c)}`, { status, form }),
+}

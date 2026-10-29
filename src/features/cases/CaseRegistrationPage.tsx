@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { CaseAfterRegistration } from './CaseAfterRegistration'
 import { CaseRegistrationTabs } from './CaseRegistrationTabs'
 import { ApiError } from '../../api/client'
-import { caseRegistrationApi, type CaseDiagnosis, type CaseMemberView, type CaseRegistrationRequest } from '../../api/caseRegistration'
+import { caseAdjustmentApi, caseRegistrationApi, type CaseDiagnosis, type CaseMemberView, type CaseRegistrationRequest } from '../../api/caseRegistration'
 import { DateField } from '../../components/DateField'
 import { toDmy } from '../../lib/dates'
 import { formatMoney } from '../../lib/format'
@@ -19,21 +19,57 @@ const blank = {
 }
 type Form = typeof blank
 const dmyText = (iso: string) => (iso ? toDmy(iso) : null)
+const str = (v: number | null | undefined) => (v === null || v === undefined ? '' : String(v))
+const dmyToIso = (s: string | null) => { const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s ?? ''); return m ? `${m[3]}-${m[2]}-${m[1]}` : '' }
+const pad = <T,>(list: T[] | null | undefined, n: number, empty: T): T[] => { const x = [...(list ?? [])]; while (x.length < n) x.push(empty); return x.slice(0, n) }
+const toDiag = (l: CaseDiagnosis[] | null | undefined) => pad((l ?? []).map((d) => ({ code: d.code ?? '', text: d.text ?? '', date: d.date ?? '' })), 3, { code: '', text: '', date: '' })
+const toForm = (r: CaseRegistrationRequest): Form => ({
+  ...blank, patientId: r.patientId, claimability: r.claimability, hospitalCode: r.hospitalCode, hospitalName: r.hospitalName ?? '', dateAdmitted: r.dateAdmitted ?? '', dateDischarge: r.dateDischarge ?? '', pending: r.pending ?? '', reserve: str(r.reserveAmount), lg: str(r.lgAmount),
+  lgTime: r.lgTime ?? '', payType: r.payType, stayType: r.stayType ?? '', modality: r.modality ?? '', nature: r.nature ?? '', special: r.specialApproval ?? '', topUp: r.topUpLimit ?? 'N', query: r.query ?? 'N', link: r.linkCaseNo ?? '', referredBy: r.referredBy ?? '', reason: r.admissionReason ?? '',
+  docDate: r.docReceivedDate ?? '', policyYear: str(r.policyYear), esp: r.espRefNo ?? '', takeOverInd: r.takeOverInd ?? 'N', takeOverAmt: str(r.takeOverAmount), takeOverPlan: r.takeOverPlan ?? '', intExt: r.intExtTakeOver ?? '', age: r.patientAge ?? '', ageUnit: r.ageUnit ?? 'Y',
+  firstCall: dmyToIso(r.firstCall), firstTreated: dmyToIso(r.firstTreated), payPending: r.payPending ?? 'N', followUp: r.followUp ?? 'N', recur: r.conditionWillRecur ?? 'N', followReq: r.followUpRequired ?? 'N', remarks: pad(r.remarks, 5, ''),
+  first: toDiag(r.firstDiagnosis), final: toDiag(r.finalDiagnosis), ud: toDiag(r.underlyingDiagnosis), rep: pad(r.repudiationCodes, 3, ''), document: r.document ?? '', personnel: r.personnel ?? '', attention: r.attention ?? '', underlying: r.underlying ? 'Y' : 'N', deduction: str(r.deductionAmount),
+  docs: pad(r.attendingDoctors, 5, ''), anae: pad(r.anaesthetists, 3, ''), procs: pad((r.procedures ?? []).map((p) => ({ text: p.text ?? '', cpt: p.cptCode ?? '' })), 6, { text: '', cpt: '' }), nons: pad((r.nonSurgicalProcedures ?? []).map((p) => ({ text: p.text ?? '', cpt: p.cptCode ?? '' })), 6, { text: '', cpt: '' }),
+  invs: pad((r.investigations ?? []).map((i) => ({ done: i.done ?? '', code: i.code ?? '' })), 3, { done: '', code: '' }), med: pad(r.medicalManagement, 3, ''), firstDoc: r.firstDocDate ?? '', subDoc: r.subsequentDocDate ?? '',
+})
 
 /** Legacy: Case > Case Registration (frmCaseAdmission), policy lookup, patient, case details, remarks, first / final / underlying diagnoses, repudiation and the limit deduction.  */
-export function CaseRegistrationPage() {
-  const options = useQuery({ queryKey: ['case-reg-options'], queryFn: caseRegistrationApi.options })
+export function CaseRegistrationPage({ mode = 'register' }: { mode?: 'register' | 'adjust' }) {
+  const adjust = mode === 'adjust'
+  const options = useQuery({ queryKey: ['case-reg-options', mode], queryFn: adjust ? caseAdjustmentApi.options : caseRegistrationApi.options })
   const [number, setNumber] = useState('')
   const [member, setMember] = useState<CaseMemberView | null>(null)
   const [f, setF] = useState<Form>(blank)
   const [hospitalSearch, setHospitalSearch] = useState('')
-  const hospitals = useQuery({ queryKey: ['case-reg-hospitals', hospitalSearch], queryFn: () => caseRegistrationApi.hospitals(hospitalSearch) })
+  const hospitals = useQuery({ queryKey: ['case-reg-hospitals', mode, hospitalSearch], queryFn: () => (adjust ? caseAdjustmentApi : caseRegistrationApi).hospitals(hospitalSearch) })
   const [message, setMessage] = useState<{ severity: 'success' | 'error' | 'warning' | 'info'; text: string } | null>(null)
   const [ack, setAck] = useState({ long: false, recent: false, open: false })
   const [prompt, setPrompt] = useState<{ text: string; next: Partial<typeof ack> } | null>(null)
   const [confirming, setConfirming] = useState(false)
+  const [caseNo, setCaseNo] = useState('')
+  const [status, setStatus] = useState('O')
+  const [adjusted, setAdjusted] = useState<{ no: string; by: string | null; on: string | null } | null>(null)
   const [registered, setRegistered] = useState<{ caseNumber: string; letters: string[]; lg: number | null; lgTime: string | null } | null>(null)
 
+  const load = useMutation({
+    mutationFn: (no: string) => caseAdjustmentApi.get(no.trim()),
+    onSuccess: (v) => { setCaseNo(v.caseNumber); setStatus(v.status || 'O'); setMember(v.member); setF(toForm(v.form)); setAck({ long: false, recent: false, open: false }); setAdjusted({ no: v.caseNumber, by: v.lastUpdatedBy, on: v.lastUpdated }); setMessage(null) },
+    onError: (e) => setMessage({ severity: 'error', text: (e as Error).message }),
+  })
+  const step = useMutation({
+    mutationFn: (dir: 'next' | 'previous') => (dir === 'next' ? caseAdjustmentApi.next(caseNo) : caseAdjustmentApi.previous(caseNo)),
+    onSuccess: (r) => load.mutate(r.caseNumber),
+    onError: (e) => setMessage({ severity: 'warning', text: (e as Error).message }),
+  })
+  const update = useMutation({
+    mutationFn: (a: typeof ack) => caseAdjustmentApi.update(caseNo, status, request(a)),
+    onSuccess: () => { setConfirming(false); setPrompt(null); setMessage({ severity: 'success', text: 'Record Updated Sucessfully' }); load.mutate(caseNo) },
+    onError: (e) => {
+      setConfirming(false)
+      if (e instanceof ApiError && e.status === 409 && e.message.includes('More Than 5 Days')) { setPrompt({ text: e.message, next: { long: true } }); return }
+      setMessage({ severity: 'error', text: (e as Error).message })
+    },
+  })
   const show = useMutation({
     mutationFn: () => caseRegistrationApi.member(number.trim()),
     onSuccess: (m) => { setMember(m); setF({ ...blank, patientId: '00' }); setAck({ long: false, recent: false, open: false }); setMessage(m.blockedReason ? { severity: 'error', text: m.blockedReason } : m.warnings.length ? { severity: 'warning', text: m.warnings.join(' ') } : null) },
@@ -70,19 +106,31 @@ export function CaseRegistrationPage() {
   const opt = (list?: { code: string; name: string }[]): [string, string][] => (list ?? []).map((o) => [o.code, `${o.code} - ${o.name}`])
   const setDiag = (which: 'first' | 'final' | 'ud', i: number, patch: Partial<{ code: string; text: string; date: string }>) => setF((x) => ({ ...x, [which]: x[which].map((d, j) => (j === i ? { ...d, ...patch } : d)) }))
   const repudiating = ['RR', 'NR', 'PR', 'AR', 'BR', 'ER'].includes(f.claimability)
-  const blocked = !!member?.blockedReason
+  const blocked = !adjust && !!member?.blockedReason
   const hospitalOptions = hospitals.data ?? []
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minWidth: 0, gap: 1.5 }}>
-      <Typography variant="h5">Case Registration</Typography>
+      <Typography variant="h5">{adjust ? 'Case Adjustment' : 'Case Registration'}</Typography>
       {message && <Alert severity={message.severity} onClose={() => setMessage(null)}>{message.text}</Alert>}
+      {adjust && (
+        <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', gap: 1.5, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <TextField size="small" label="Case No" value={caseNo} onChange={(e) => setCaseNo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && caseNo.trim()) load.mutate(caseNo) }} slotProps={{ htmlInput: { maxLength: 15 } }} />
+          <Button variant="contained" disabled={!caseNo.trim() || load.isPending} onClick={() => load.mutate(caseNo)}>Show</Button>
+          <Button variant="outlined" disabled={!adjusted || step.isPending} onClick={() => step.mutate('previous')}>Pre</Button>
+          <Button variant="outlined" disabled={!adjusted || step.isPending} onClick={() => step.mutate('next')}>Next</Button>
+          <TextField select size="small" label="Status" value={status} onChange={(e) => setStatus(e.target.value)} sx={{ width: 140 }} disabled={!adjusted}>{[['O', 'O - Open'], ['C', 'C - Close'], ['D', 'D - Delete']].map(([c, n]) => <MenuItem key={c} value={c}>{n}</MenuItem>)}</TextField>
+          {adjusted && <Typography variant="body2" sx={{ alignSelf: 'center' }}>{member?.name} &nbsp;|&nbsp; Policy {member?.policyNo} &nbsp;|&nbsp; Plan {member?.insured}/{member?.plan} &nbsp;|&nbsp; Last updated {adjusted.by ?? '-'} {toDmy(adjusted.on ?? '')}</Typography>}
+        </Paper>
+      )}
+      {!adjust && (
       <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', gap: 1.5, alignItems: 'flex-start', flexWrap: 'wrap' }}>
         <TextField size="small" label="Mem Num." value={number} onChange={(e) => setNumber(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && number.trim()) { setMessage(null); show.mutate() } }} slotProps={{ htmlInput: { maxLength: 15 } }} />
         <Button variant="contained" disabled={!number.trim() || show.isPending} onClick={() => { setMessage(null); show.mutate() }}>Show</Button>
         <Button variant="outlined" onClick={() => { setNumber(''); setMember(null); setF(blank); setMessage(null) }}>Clear</Button>
         {member && <Typography variant="body2" sx={{ alignSelf: 'center' }}>{member.name} &nbsp;|&nbsp; IC {member.icBcPp} &nbsp;|&nbsp; Policy {member.policyNo} &nbsp;|&nbsp; Plan {member.insured}/{member.plan} &nbsp;|&nbsp; Status {member.status} &nbsp;|&nbsp; {toDmy(member.effectiveDate ?? '')} - {toDmy(member.expiryDate ?? '')} &nbsp;|&nbsp; Available limit {formatMoney(member.availableLimit)}{member.topUp ? ' (top-up)' : ''}</Typography>}
       </Paper>
+      )}
       {registered && <CaseAfterRegistration key={registered.caseNumber} caseNumber={registered.caseNumber} letters={registered.letters} lgAmount={registered.lg} lgTime={registered.lgTime} onDone={() => setRegistered(null)} />}
       {member?.planMessage && <Alert severity="info">{member.planMessage}</Alert>}
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 1.5, opacity: member && !blocked ? 1 : 0.5, pointerEvents: member && !blocked ? 'auto' : 'none' }}>
@@ -183,7 +231,7 @@ export function CaseRegistrationPage() {
           ))}
           {f.med.map((m, i) => <TextField key={i} size="small" label={`Medical management ${i + 1}`} value={m} onChange={(e) => setF((x) => ({ ...x, med: x.med.map((v, j) => (j === i ? e.target.value : v)) }))} slotProps={{ htmlInput: { maxLength: 500 } }} />)}
         </Paper>
-        {member && <CaseRegistrationTabs memberNumber={member.memberNumber} />}
+        {member && <CaseRegistrationTabs memberNumber={member.memberNumber} area={adjust ? 'adjustment' : 'registration'} />}
         <Paper variant="outlined" sx={{ p: 1.5, display: 'grid', gap: 1 }}>
           <Typography variant="subtitle2">Remarks</Typography>
           {f.remarks.map((r, i) => <TextField key={i} size="small" label={`Remark ${i + 1}`} value={r} multiline minRows={1} onChange={(e) => setF((x) => ({ ...x, remarks: x.remarks.map((v, j) => (j === i ? e.target.value : v)) }))} slotProps={{ htmlInput: { maxLength: 3900 } }} />)}
@@ -191,14 +239,18 @@ export function CaseRegistrationPage() {
       </Box>
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
         <Typography variant="body2" sx={{ flexGrow: 1 }}>* - Mandatory Fields. </Typography>
-        <Button variant="contained" disabled={!member || blocked || register.isPending} onClick={() => { setMessage(null); setConfirming(true) }}>Register</Button>
+        <Button variant="contained" disabled={!member || blocked || register.isPending || update.isPending || (adjust && !adjusted)} onClick={() => { setMessage(null); setConfirming(true) }}>{adjust ? 'Update' : 'Register'}</Button>
       </Box>
-      <Dialog open={confirming} onClose={() => setConfirming(false)}><DialogTitle>Register case</DialogTitle><DialogContent><DialogContentText>Are you sure?</DialogContentText></DialogContent>
-        <DialogActions><Button onClick={() => setConfirming(false)}>No</Button><Button variant="contained" disabled={register.isPending} onClick={() => register.mutate(ack)}>Yes</Button></DialogActions></Dialog>
+      <Dialog open={confirming} onClose={() => setConfirming(false)}><DialogTitle>{adjust ? 'Update case' : 'Register case'}</DialogTitle><DialogContent><DialogContentText>Are you sure?</DialogContentText></DialogContent>
+        <DialogActions><Button onClick={() => setConfirming(false)}>No</Button><Button variant="contained" disabled={register.isPending || update.isPending} onClick={() => (adjust ? update.mutate(ack) : register.mutate(ack))}>Yes</Button></DialogActions></Dialog>
       <Dialog open={!!prompt} onClose={() => setPrompt(null)}><DialogTitle>Please confirm</DialogTitle><DialogContent><DialogContentText>{prompt?.text}</DialogContentText></DialogContent>
-        <DialogActions><Button onClick={() => setPrompt(null)}>No</Button><Button variant="contained" onClick={() => { const a = { ...ack, ...prompt!.next }; setAck(a); setPrompt(null); register.mutate(a) }}>Yes</Button></DialogActions></Dialog>
+        <DialogActions><Button onClick={() => setPrompt(null)}>No</Button><Button variant="contained" onClick={() => { const a = { ...ack, ...prompt!.next }; setAck(a); setPrompt(null); if (adjust) update.mutate(a); else register.mutate(a) }}>Yes</Button></DialogActions></Dialog>
     </Box>
   )
 }
+
+
+
+
 
 

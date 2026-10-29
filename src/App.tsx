@@ -119,6 +119,9 @@ export default function App() {
           <Route element={<RequireScreen position={byPath['/cases/registration']} />}>
             <Route path="cases/registration" element={<CaseRegistrationPage />} />
           </Route>
+          <Route element={<RequireScreen position={byPath['/cases/adjustment']} />}>
+            <Route path="cases/adjustment" element={<CaseRegistrationPage mode="adjust" />} />
+          </Route>
           <Route element={<RequireScreen position={byPath['/hospitals']} />}>
             <Route path="hospitals" element={<HospitalsPage />} />
           </Route>
@@ -128,6 +131,7 @@ export default function App() {
     </Routes>
   )
 }
+
 
 
 
