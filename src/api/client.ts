@@ -40,6 +40,12 @@ export const api = {
     (await send(path, { method: 'PUT', body: JSON.stringify(body) })).json() as Promise<T>,
   delete: async <T>(path: string) => (await send(path, { method: 'DELETE' })).json() as Promise<T>,
   blob: async (path: string) => (await send(path)).blob(),
+  /** POST that returns a generated file; the server names it in Content-Disposition and can add X-* headers (record count, batch). */
+  postFile: async (path: string, body: unknown) => {
+    const res = await send(path, { method: 'POST', body: JSON.stringify(body) })
+    const name = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(res.headers.get('Content-Disposition') ?? '')?.[1]
+    return { blob: await res.blob(), fileName: name ? decodeURIComponent(name) : 'download', headers: res.headers }
+  },
 }
 
 

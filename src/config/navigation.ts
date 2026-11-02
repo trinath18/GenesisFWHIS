@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Single source of truth for menu + routes. `position` is the legacy USRAccess flag position (1-based).
  * Add each migrated module here; the menu, routes and permission checks pick it up automatically.
  */
@@ -38,6 +38,18 @@ export const navigation: NavItem[] = [
   { path: '/cases/transfer', label: 'Case Transfer', position: 11 },
   { path: '/cases/temp-transfer', label: 'Temp Case Transfer', position: 11 },
   { path: '/cases/payclaim', label: 'Case PayClaim', position: 11 },
+  { path: '/cases/lifetime-limit', label: 'Lifetime Lmt Upgrade', position: 11 },
+  { path: '/invoices/processing', label: 'Invoice Processing', position: 22 },
+  { path: '/worksheets/registration', label: 'Worksheet Registration', position: 64 },
+  { path: '/worksheets/enquiry', label: 'Worksheet Enquiry', position: 13 },
+  { path: '/worksheets/adjustment', label: 'Worksheet Adjustment', position: 65 },
+  { path: '/cases/audit-review', label: 'Case Audit Review', position: 16 },
+  { path: '/cases/send-to-bordx', label: 'Send to Bordx Unit', position: 154 },
+  { path: '/cases/non-disclosure', label: 'Non-Disclosure Info', position: 11 },
+  { path: '/cases/claim-ascii', label: 'Claim ASCII', position: 18 },
+  { path: '/cases/case-ascii', label: 'Case ASCII', position: 18 },
+  { path: '/cases/send-to-claims-rep', label: 'Send to Claims (Rep)', position: 154 },
+  { path: '/cases/cru-send-to-claims', label: 'CRU Send to Claims', position: 154 },
   { path: '/hospitals', label: 'Hospitals (report demo)', position: 3 },
 ]
 

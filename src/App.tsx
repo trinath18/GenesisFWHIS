@@ -1,4 +1,4 @@
-﻿import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { RequireAuth, RequireScreen } from './auth/RequireAuth'
 import { AppShell } from './layout/AppShell'
 import { ForbiddenPage, HomePage } from './features/home/HomePage'
@@ -29,8 +29,18 @@ import { McoReinstatementPage } from './features/membership/McoReinstatementPage
 import { CaseRegistrationPage } from './features/cases/CaseRegistrationPage'
 import { CaseTransferPage } from './features/cases/CaseTransferPage'
 import { CasePayClaimPage } from './features/cases/CasePayClaimPage'
+import { LifetimeLimitPage } from './features/cases/LifetimeLimitPage'
+import { InvoiceProcessingPage } from './features/invoices/InvoiceProcessingPage'
+import { WorksheetAdjustmentPage } from './features/worksheets/WorksheetAdjustmentPage'
+import { WorksheetEnquiryPage } from './features/worksheets/WorksheetEnquiryPage'
+import { WorksheetRegistrationPage } from './features/worksheets/WorksheetRegistrationPage'
+import { CaseAuditReviewPage } from './features/cases/CaseAuditReviewPage'
+import { SendToBordxPage } from './features/cases/SendToBordxPage'
 import { McoDateCorrectionPage } from './features/membership/McoDateCorrectionPage'
 import { ReinstatementPage } from './features/membership/ReinstatementPage'
+import { NonDisclosurePage } from './features/cases/NonDisclosurePage'
+import { AsciiExportPage } from './features/cases/AsciiExportPage'
+import { SendToClaimsPage } from './features/cases/SendToClaimsPage'
 import { navigation } from './config/navigation'
 
 const byPath = Object.fromEntries(navigation.map((n) => [n.path, n.position]))
@@ -132,6 +142,42 @@ export default function App() {
           </Route>
           <Route element={<RequireScreen position={byPath['/cases/payclaim']} />}>
             <Route path="cases/payclaim" element={<CasePayClaimPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/cases/lifetime-limit']} />}>
+            <Route path="cases/lifetime-limit" element={<LifetimeLimitPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/invoices/processing']} />}>
+            <Route path="invoices/processing" element={<InvoiceProcessingPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/worksheets/registration']} />}>
+            <Route path="worksheets/registration" element={<WorksheetRegistrationPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/worksheets/enquiry']} />}>
+            <Route path="worksheets/enquiry" element={<WorksheetEnquiryPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/worksheets/adjustment']} />}>
+            <Route path="worksheets/adjustment" element={<WorksheetAdjustmentPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/cases/audit-review']} />}>
+            <Route path="cases/audit-review" element={<CaseAuditReviewPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/cases/send-to-bordx']} />}>
+            <Route path="cases/send-to-bordx" element={<SendToBordxPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/cases/non-disclosure']} />}>
+            <Route path="cases/non-disclosure" element={<NonDisclosurePage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/cases/claim-ascii']} />}>
+            <Route path="cases/claim-ascii" element={<AsciiExportPage key="claim" kind="claim" />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/cases/case-ascii']} />}>
+            <Route path="cases/case-ascii" element={<AsciiExportPage key="case" kind="case" />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/cases/send-to-claims-rep']} />}>
+            <Route path="cases/send-to-claims-rep" element={<SendToClaimsPage key="rep" kind="rep" />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/cases/cru-send-to-claims']} />}>
+            <Route path="cases/cru-send-to-claims" element={<SendToClaimsPage key="cru" kind="cru" />} />
           </Route>
           <Route element={<RequireScreen position={byPath['/hospitals']} />}>
             <Route path="hospitals" element={<HospitalsPage />} />

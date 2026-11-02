@@ -243,17 +243,13 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Lifetime Lmt Upgrade",
-                             "positions":  [
-                                               11
-                                           ],
-                             "legacyForm":  "frmMembershipLifetimeLmt"
+                             "route":  "/cases/lifetime-limit",
+                             "positions":  11
                          },
                          {
                              "label":  "Case Audit Review",
-                             "positions":  [
-                                               16
-                                           ],
-                             "legacyForm":  "frmCaseAuditReview"
+                             "route":  "/cases/audit-review",
+                             "positions":  16
                          },
                          {
                              "label":  "Audit Review Tracking",
@@ -284,31 +280,23 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Non-Disclousre Info",
-                             "positions":  [
-                                               11
-                                           ],
-                             "legacyForm":  "frmRECNonDisclosure"
+                             "route":  "/cases/non-disclosure",
+                             "positions":  11
                          },
                          {
                              "label":  "Send to Bordx Unit",
-                             "positions":  [
-                                               154
-                                           ],
-                             "legacyForm":  "FrmCSSendtoClaim"
+                             "route":  "/cases/send-to-bordx",
+                             "positions":  154
                          },
                          {
                              "label":  "Send to Claims (Rep)",
-                             "positions":  [
-                                               154
-                                           ],
-                             "legacyForm":  "FrmCSRepSendtoClaim"
+                             "route":  "/cases/send-to-claims-rep",
+                             "positions":  154
                          },
                          {
                              "label":  "CRU Send to Claims",
-                             "positions":  [
-                                               154
-                                           ],
-                             "legacyForm":  "FrmCRUPassOut"
+                             "route":  "/cases/cru-send-to-claims",
+                             "positions":  154
                          },
                          {
                              "label":  "LG Tracking",
@@ -317,17 +305,13 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Claim ASCII",
-                             "positions":  [
-                                               18
-                                           ],
-                             "legacyForm":  "frmNewClaimAscii"
+                             "route":  "/cases/claim-ascii",
+                             "positions":  18
                          },
                          {
                              "label":  "Case ASCII",
-                             "positions":  [
-                                               18
-                                           ],
-                             "legacyForm":  "frmCaseASCII"
+                             "route":  "/cases/case-ascii",
+                             "positions":  18
                          },
                          {
                              "label":  "Claim ASCII(MedGen)",
@@ -392,10 +376,8 @@ export const menuTree: MenuNode[] = [
         "children":  [
                          {
                              "label":  "Invoice Processing",
-                             "positions":  [
-                                               22
-                                           ],
-                             "legacyForm":  "frmInvoice"
+                             "route":  "/invoices/processing",
+                             "positions":  22
                          },
                          {
                              "label":  "Original Invoice Update",
@@ -456,24 +438,18 @@ export const menuTree: MenuNode[] = [
         "children":  [
                          {
                              "label":  "Worksheet Registration",
-                             "positions":  [
-                                               64
-                                           ],
-                             "legacyForm":  "frmNewWorksheet2010"
+                             "route":  "/worksheets/registration",
+                             "positions":  64
                          },
                          {
                              "label":  "WorkSheet Adjustment",
-                             "positions":  [
-                                               65
-                                           ],
-                             "legacyForm":  "frmNewWSAdjust2010"
+                             "route":  "/worksheets/adjustment",
+                             "positions":  65
                          },
                          {
                              "label":  "Worksheet Enquiry",
-                             "positions":  [
-                                               13
-                                           ],
-                             "legacyForm":  "frmWorksheetEnq"
+                             "route":  "/worksheets/enquiry",
+                             "positions":  13
                          },
                          {
                              "label":  "Generate Credit/Debit Note",
@@ -1530,20 +1506,31 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Entity",
-                             "positions":  [
-                                               69,
-                                               70,
-                                               71,
-                                               72,
-                                               73,
-                                               74,
-                                               75,
-                                               76,
-                                               77,
-                                               78,
-                                               79
-                                           ],
-                             "legacyForm":  "frmMaintenanceGeneral"
+                             "children":  [
+                                              {
+                                                  "label":  "Group Company (Employer)",
+                                                  "route":  "/lookups/entity-group-company",
+                                                  "positions":  [
+                                                                    76
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Other Entity Tabs",
+                                                  "positions":  [
+                                                                    69,
+                                                                    70,
+                                                                    71,
+                                                                    72,
+                                                                    73,
+                                                                    74,
+                                                                    75,
+                                                                    77,
+                                                                    78,
+                                                                    79
+                                                                ],
+                                                  "legacyForm":  "frmMaintenanceGeneral"
+                                              }
+                                          ]
                          },
                          {
                              "label":  "Member",

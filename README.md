@@ -1,4 +1,6 @@
-﻿# Genesis UI
+﻿# GenesisFIS UI
+
+Lives in `C:\GenesisFIS\FISMigration\FISUI\GenesisFISUI`; the API is `..\..\FISAPI\GenesisFISAPI`.
 
 React 19 + TypeScript + Vite + MUI + TanStack Query. Web front end for the Genesis FIS migration.
 
