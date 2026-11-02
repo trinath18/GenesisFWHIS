@@ -1,4 +1,4 @@
-﻿import { api } from './client'
+import { api } from './client'
 import type { MemberBenefits, MemberHistory, NonDisclosureItem, PolicyTerm, PolicyWordingListing } from './membership'
 
 export interface CaseOption { code: string; name: string }
@@ -7,6 +7,8 @@ export interface CasePatient { coverId: string; name: string; icBcPp: string | n
 export interface CaseMemberView {
   memberNumber: string; name: string; icBcPp: string | null; policyNo: string | null; health: string | null; insured: string | null; plan: string | null; payor: string | null; status: string | null; birthDate: string | null
   effectiveDate: string | null; expiryDate: string | null; availableLimit: number | null; topUp: boolean; terminated: boolean; planMessage: string | null; patients: CasePatient[]; blockedReason: string | null; warnings: string[]
+  renewal?: string | null; takeOver?: string | null; annualLimit?: number | null; address1?: string | null; address2?: string | null; address3?: string | null
+  postCode?: string | null; city?: string | null; state?: string | null
 }
 export interface CaseProcedure { text: string | null; cptCode: string | null }
 export interface CaseExtras { principalExclusion: string | null; coveredExclusions: { coverId: string; name: string | null; exclusion: string | null }[]; managementNote: string | null; surgicalSchedule: { payor: string; plan: string; mainCategory: string; subCategory: string; percent: string }[] }
@@ -37,6 +39,8 @@ export const caseRegistrationApi = {
   policyWordingFile: (n: string, file: string) => api.blob(`${base}/member/${encodeURIComponent(n)}/policy-wording/${encodeURIComponent(file)}`),
   issueLg: (caseNumber: string, r: { amount: number | null; time: string | null; remark: string | null }) => api.post<CaseLgResult>(`${base}/${encodeURIComponent(caseNumber)}/lg`, r),
   letter: (caseNumber: string, kind: string) => api.blob(`${base}/${encodeURIComponent(caseNumber)}/letters/${kind}`),
+  /** Doc Req Adm / Doc Req Discharge / T.Home Drugs, printed from what is on the form. */
+  draftLetter: (kind: DraftLetterKind, r: DraftLetterRequest) => api.postFile(`${base}/letters/${kind}`, r),
 }
 
 
@@ -54,7 +58,11 @@ export const memberTabsApi = (area: 'registration' | 'adjustment') => tabsFor(ar
 
 export interface CaseAdjustmentView { caseNumber: string; status: string; member: CaseMemberView | null; patientName: string; form: CaseRegistrationRequest; hospitalName: string | null; lastUpdatedBy: string | null; lastUpdated: string | null; registered: string | null; openedBy: string | null }
 const adj = '/api/case-adjustment'
+export type DraftLetterKind = 'doc-request-admission' | 'doc-request-discharge' | 'take-home-drugs'
+export interface DraftLetterRequest { memberNumber: string | null; patientId: string | null; hospitalCode: string | null; hospitalName: string | null; admitted: string | null; discharged: string | null; caseNumber: string | null }
+
 export const caseAdjustmentApi = {
+  draftLetter: (kind: DraftLetterKind, r: DraftLetterRequest) => api.postFile(`${adj}/letters/${kind}`, r),
   options: () => api.get<CaseRegistrationOptions>(`${adj}/options`),
   hospitals: (search: string) => api.get<CaseOption[]>(`${adj}/hospitals?search=${encodeURIComponent(search)}`),
   get: (c: string) => api.get<CaseAdjustmentView>(`${adj}/${encodeURIComponent(c)}`),

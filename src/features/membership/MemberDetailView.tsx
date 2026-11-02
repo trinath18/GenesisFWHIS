@@ -1,91 +1,73 @@
-﻿import { Alert, Box, Chip, CircularProgress, Paper, Tab, Tabs, Typography } from '@mui/material'
+﻿import { Box, Tab, Tabs, TextField, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { membershipApi, type MemberDetail } from '../../api/membership'
-import { PrintButton } from '../../components/PrintButton'
-import { download, safeFileName } from '../../lib/download'
+import { LegacyFrame, LegacyRow as L } from '../../components/LegacyForm'
+import { legacyBox as box } from '../../components/legacyStyles'
 import { formatDate, formatMoney } from '../../lib/format'
-import { Field, FieldGrid } from '../../components/DataTables'
 import {
-  AccountHistoryTab,
-  AccountTab,
-  AmendmentsTab,
-  BenefitsTab,
-  CaseHistoryTab,
-  CasesTab,
-  FeesTab,
-  LifetimeLimitTab,
-  MemberHistoryTab,
-  NonDisclosureTab,
-  NotesTab,
-  PolicyTermsTab,
-  PolicyWordingTab,
-  SupplementaryTab,
-  TakeoverClaimsTab,
+  AccountHistoryTab, AccountTab, AmendmentsTab, BenefitsTab, CaseHistoryTab, CasesTab, FeesTab, LifetimeLimitTab, MemberHistoryTab, NonDisclosureTab, NotesTab,
+  PolicyTermsTab, PolicyWordingTab, SupplementaryTab, TakeoverClaimsTab,
 } from './MemberTabs'
 
-/** Same order as the legacy SSTab1 tabs. */
+/** Same order and captions as the legacy SSTab1 tabs of frmNewMBMEnquiry. */
 const tabs = [
-  'Details', 'Supplementary', 'Adjust History', 'Benefits', 'Current Case', 'Case History', 'Member History', 'Account',
-  'Account History', 'Fees', 'Non Disclosure', 'Policy Terms', 'LT Limit', 'Policy Wording', 'T/O Claims', 'Notes',
+  'Prin Detail', 'Supp', 'Adjust History', 'HIS Benefits', 'Current Case', 'Case History', 'Mem History', 'Account',
+  'Acc History', 'Fees', 'Non Disclosure', 'Policy Terms', 'LT Limit', 'Policy Wording', 'T/O Claims', 'Notes',
 ] as const
 type TabName = (typeof tabs)[number]
 
-function DetailsTab({ m }: { m: MemberDetail }) {
+const R = ({ v, w, multiline }: { v: string | number | null | undefined; w?: number | string; multiline?: boolean }) => (
+  <TextField size="small" sx={{ ...box, width: w ?? '100%' }} value={v ?? ''} multiline={multiline} minRows={multiline ? 4 : undefined} slotProps={{ input: { readOnly: true } }} />
+)
+const t = (label: string, w = 95) => <Typography sx={{ fontSize: 13, width: w, flexShrink: 0, ml: 1 }}>{label}</Typography>
+const d = (v: string | null | undefined) => (v ? formatDate(v) : '')
+const takeOver = (v: string | null) => (v === 'C' ? 'C - Conversion' : v === 'Y' ? 'Y - Take Over' : v ? `${v} - None` : '')
+
+/** Legacy "Prin Detail" tab: address and personal details, policy dates, warranty, remarks and the plan's special note. */
+function PrinDetailTab({ m }: { m: MemberDetail }) {
+  const o = m.others
+  const exclusions = useQuery({ queryKey: ['member', m.number, 'exclusions'], queryFn: () => membershipApi.exclusions(m.number) })
+  const remarks = useQuery({ queryKey: ['member', m.number, 'remarks'], queryFn: () => membershipApi.remarks(m.number) })
+  const notes = (list: { memberNumber: string; text: string | null }[] | undefined) => (list ?? []).map((n) => `${n.memberNumber} - ${n.text ?? ''}`).join('\n\n')
   return (
-    <Box sx={{ display: 'grid', gap: 3 }}>
-      <FieldGrid>
-        <Field label="Name" value={m.name} />
-        <Field label="IC / BC / Passport" value={m.icBcPp} />
-        <Field label="Policy No" value={m.policyNo} />
-        <Field label="Date of Birth" value={formatDate(m.dateOfBirth)} />
-        <Field label="Sex" value={m.sex} />
-        <Field label="Adult / Child" value={m.adultChild} />
-        <Field label="Member Type" value={m.memberType} />
-        <Field label="Status" value={m.status} />
-        <Field label="Data Status" value={m.dataStatus} />
-        <Field label="Expired" value={m.expiredStatus} />
-        <Field label="Renewal" value={m.renewFlag} />
-        <Field label="Take Over" value={m.takeover === 'C' ? 'C - Conversion' : m.takeover === 'Y' ? 'Y - Take Over' : 'N - None'} />
-      </FieldGrid>
-      <Typography variant="subtitle2">Policy</Typography>
-      <FieldGrid>
-        <Field label="Insurer" value={m.insurerCode} />
-        <Field label="Plan" value={m.planCode} />
-        <Field label="Health Code" value={m.healthCode} />
-        <Field label="Payor" value={m.payorCode} />
-        <Field label="Payor Effective" value={formatDate(m.payorEffDate)} />
-        <Field label="Payor Expiry" value={formatDate(m.payorExpDate)} />
-        <Field label="Final Expiry" value={formatDate(m.finalExpiryDate)} />
-        <Field label="Policy Year" value={m.policyYear} />
-        <Field label="Bordx Date" value={formatDate(m.bordxDate)} />
-        <Field label="Batch No" value={m.batchNo} />
-        <Field label="Value Date" value={formatDate(m.valueDate)} />
-        <Field label="Cancel / Endorse Date" value={formatDate(m.endorsementDate)} />
-        <Field label="Payor Submission" value={formatDate(m.payorSubmissionDate)} />
-        <Field label="Available Annual Limit" value={m.annualLimitApplies ? formatMoney(m.availableLimit) : 'FULL'} />
-      </FieldGrid>
-      <Typography variant="subtitle2">Group and address</Typography>
-      <FieldGrid>
-        <Field label="Group Company" value={m.groupCompany} />
-        <Field label="Address" value={[m.address1, m.address2, m.address3, m.address4].filter(Boolean).join(', ')} />
-        <Field label="City" value={m.city} />
-        <Field label="Post Code" value={m.postCode} />
-        <Field label="State" value={m.state} />
-      </FieldGrid>
-      {m.planSpecialNote && <Alert severity="info">{m.planSpecialNote}</Alert>}
+    <Box sx={{ display: 'grid', gap: 1 }}>
+      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', lg: '1.2fr 1fr' } }}>
+        <Box>
+          <L label="Address" w={85}><R v={m.address1} /></L>
+          <L label="" w={85}><R v={m.address2} /></L>
+          <L label="" w={85}><R v={[m.address3, m.address4].filter(Boolean).join(', ')} /></L>
+          <L label="PostCode" w={85}><R v={m.postCode} w={110} />{t('City/Town', 75)}<R v={m.city} /></L>
+          <L label="State" w={85}><R v={m.state} /></L>
+          <L label="Sex" w={85}><R v={m.sex} w={110} />{t('TakeOver', 75)}<R v={takeOver(m.takeover)} /></L>
+          <L label="Birthdate" w={85}><R v={d(m.dateOfBirth)} w={110} />{t('Marital Status', 75)}<R v={o?.maritalStatus} /></L>
+          <L label="Race" w={85}><R v={m.raceCode} w={110} />{t('Nationality', 75)}<R v={o?.nationality} /></L>
+          <L label="Mem Type" w={85}><R v={m.memberType} w={110} />{t('Agent Code', 75)}<R v={o?.agentCode} /></L>
+          <L label="Renewal" w={85}><R v={m.renewFlag} w={110} />{t('Age Band', 75)}<R v={m.ageCode} /></L>
+          <L label="Gua. Renewal" w={85}><R v={o?.guaranteedRenewal} w={110} />{t('Branch', 75)}<R v={o?.branch ?? m.branchCode} /></L>
+        </Box>
+        <Box>
+          <L label="Ins Type" w={110}><R v={m.insurerCode} w={110} />{t('Plan Code', 70)}<R v={m.planCode} /></L>
+          <L label="Eff Date" w={110}><R v={d(m.payorEffDate)} w={110} />{t('Exp Date', 70)}<R v={d(m.payorExpDate)} /></L>
+          <L label="Bordx. Date" w={110}><R v={d(m.bordxDate)} w={110} />{t('Batch Num', 70)}<R v={m.batchNo} /></L>
+          <L label="Date Fr. Insurer" w={110}><R v={d(m.payorSubmissionDate)} w={110} />{t('DOR', 70)}<R v={d(m.valueDate)} /></L>
+          <L label="E'yee Num" w={110}><R v={o?.employeeNo} /></L>
+          <L label="Endt Eff Date" w={110}><R v={d(m.endorsementDate)} w={110} />{t('Payor Endt', 70)}<R v={m.endorseType} /></L>
+          <L label="Group Company" w={110}><R v={m.groupCompany} /></L>
+          <L label="Final Expiry" w={110}><R v={d(m.finalExpiryDate)} w={110} />{t('Policy Year', 70)}<R v={m.policyYear} /></L>
+          <L label="Adult/Child" w={110}><R v={m.adultChild} w={110} />{t('Cancel Date', 70)}<R v={d(o?.cancelDate)} /></L>
+        </Box>
+      </Box>
+      <Box sx={{ display: 'grid', gap: 1, gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr 1fr' } }}>
+        <LegacyFrame title="Principal Warranty"><R v={notes(exclusions.data)} multiline /></LegacyFrame>
+        <LegacyFrame title="Remarks"><R v={notes(remarks.data)} multiline /></LegacyFrame>
+        <LegacyFrame title="Special Note"><R v={m.planSpecialNote} multiline /></LegacyFrame>
+      </Box>
       {m.refund && (
-        <>
-          <Typography variant="subtitle2">Refund (cancelled member)</Typography>
-          <FieldGrid>
-            <Field label="Premium Reduction" value={formatMoney(m.refund.premiumReduction)} />
-            <Field label="MCO Refund" value={formatMoney(m.refund.mcoRefund)} />
-            <Field label="Provider Refund" value={formatMoney(m.refund.providerRefund)} />
-            <Field label="Provider Effective" value={formatMoney(m.refund.providerEffective)} />
-            <Field label="MCO Effective" value={formatMoney(m.refund.mcoEffective)} />
-            <Field label="Premium Effective" value={formatMoney(m.refund.premiumEffective)} />
-          </FieldGrid>
-        </>
+        <LegacyFrame title="Refund (cancelled member)">
+          <L label="Prem Refund" w={110}><R v={formatMoney(m.refund.premiumReduction)} w={130} />{t('MCO Refund', 95)}<R v={formatMoney(m.refund.mcoRefund)} w={130} />{t('Provider Refund', 110)}<R v={formatMoney(m.refund.providerRefund)} w={130} /></L>
+          <L label="Effective Prem" w={110}><R v={formatMoney(m.refund.premiumEffective)} w={130} />{t('MCO Effective', 95)}<R v={formatMoney(m.refund.mcoEffective)} w={130} />{t('Provider Eff.', 110)}<R v={formatMoney(m.refund.providerEffective)} w={130} /></L>
+        </LegacyFrame>
       )}
     </Box>
   )
@@ -94,15 +76,15 @@ function DetailsTab({ m }: { m: MemberDetail }) {
 function renderTab(tab: TabName, m: MemberDetail) {
   const n = m.number
   switch (tab) {
-    case 'Details': return <DetailsTab m={m} />
-    case 'Supplementary': return <SupplementaryTab number={n} insurerCode={m.insurerCode} />
+    case 'Prin Detail': return <PrinDetailTab m={m} />
+    case 'Supp': return <SupplementaryTab number={n} insurerCode={m.insurerCode} />
     case 'Adjust History': return <AmendmentsTab number={n} />
-    case 'Benefits': return <BenefitsTab number={n} />
+    case 'HIS Benefits': return <BenefitsTab number={n} />
     case 'Current Case': return <CasesTab number={n} />
     case 'Case History': return <CaseHistoryTab number={n} />
-    case 'Member History': return <MemberHistoryTab number={n} />
+    case 'Mem History': return <MemberHistoryTab number={n} />
     case 'Account': return <AccountTab number={n} />
-    case 'Account History': return <AccountHistoryTab number={n} />
+    case 'Acc History': return <AccountHistoryTab number={n} />
     case 'Fees': return <FeesTab number={n} />
     case 'Non Disclosure': return <NonDisclosureTab number={n} />
     case 'Policy Terms': return <PolicyTermsTab number={n} />
@@ -113,44 +95,16 @@ function renderTab(tab: TabName, m: MemberDetail) {
   }
 }
 
-export function MemberDetailView({ number }: { number: string }) {
+/** The 16 tabs of the legacy Member Enquiry form for one member. */
+export function MemberDetailView({ member }: { member: MemberDetail }) {
   const [tab, setTab] = useState(0)
-  const [printError, setPrintError] = useState<string | null>(null)
-  const member = useQuery({ queryKey: ['member', number], queryFn: () => membershipApi.get(number) })
-
-  if (member.isLoading) return <CircularProgress />
-  if (member.error) return <Alert severity="error">{(member.error as Error).message}</Alert>
-  const m = member.data!
-
-  const print = async (kind: 'enquiry.pdf' | 'exclusion-form.xlsx' | 'history.xlsx') => {
-    setPrintError(null)
-    try {
-      download(await membershipApi.print(m.number, kind), `member-${safeFileName(m.number)}-${kind}`)
-    } catch (e) {
-      setPrintError(e instanceof Error ? e.message : 'Print failed')
-    }
-  }
-
   return (
-    <Paper variant="outlined" sx={{ p: 2 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
-        <Typography variant="h6">{m.number}</Typography>
-        <Typography>{m.name}</Typography>
-        {m.status && <Chip size="small" label={`Status ${m.status}`} color={m.status === 'A' ? 'success' : 'default'} />}
-        {m.expiredStatus === 'Y' && <Chip size="small" label="Expired" color="warning" />}
-        {m.reinstated && <Chip size="small" label="Reinstated" />}
-        {m.topUp && <Chip size="small" label="Top-up" />}
-        <Box sx={{ flexGrow: 1 }} />
-        <PrintButton label="Print" onClick={() => print('enquiry.pdf')} />
-        <PrintButton label="Print 2 (Excel)" onClick={() => print('exclusion-form.xlsx')} />
-        <PrintButton label="Print History (Excel)" onClick={() => print('history.xlsx')} />
-      </Box>
-      {printError && <Alert severity="error" sx={{ mb: 1 }}>{printError}</Alert>}
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ mb: 2 }}>
-        {tabs.map((t) => <Tab key={t} label={t} />)}
+    <>
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto"
+        sx={{ borderBottom: 1, borderColor: 'divider', minHeight: 34, '& .MuiTab-root': { minHeight: 34, textTransform: 'none', px: 1.25 } }}>
+        {tabs.map((x) => <Tab key={x} label={x} />)}
       </Tabs>
-      {renderTab(tabs[tab], m)}
-    </Paper>
+      <Box sx={{ p: 1 }}>{renderTab(tabs[tab], member)}</Box>
+    </>
   )
 }
-

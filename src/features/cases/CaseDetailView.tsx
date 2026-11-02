@@ -1,17 +1,13 @@
-﻿import { Alert, Box, Chip, CircularProgress, Paper, Tab, Tabs, Typography } from '@mui/material'
-import { useQuery } from '@tanstack/react-query'
+﻿import { Box, Tab, Tabs } from '@mui/material'
 import { useState } from 'react'
-import { casesApi, type CaseDetail } from '../../api/cases'
-import { useAuth } from '../../auth/AuthContext'
-import { download } from '../../lib/download'
-import { PrintButton } from '../../components/PrintButton'
+import type { CaseDetail } from '../../api/cases'
+import { CaseDetTab, CaseOthersLegacyTab, TakeOverLegacyTab } from './CaseInquiryLegacyTabs'
 import {
-  BenefitsTab, CartonTab, CaseDetailsTab, CaseOthersTab, EmailsTab, ExclusionsTab, FormsTab, GuaranteesTab, InvoicesTab, LifetimeTab,
-  NonDisclosureTab, NotesTab, PaymentsTab, PolicyTermsTab, PolicyWordingTab, RemindersTab, SurgicalScheduleTab, TakeOverTab, WorksheetsTab,
+  BenefitsTab, CartonTab, EmailsTab, ExclusionsTab, FormsTab, GuaranteesTab, InvoicesTab, LifetimeTab,
+  NonDisclosureTab, NotesTab, PaymentsTab, PolicyTermsTab, PolicyWordingTab, RemindersTab, SurgicalScheduleTab, WorksheetsTab,
 } from './CaseTabs'
-import { statusLabels, withLabel } from './labels'
 
-/** Same order as the legacy SSTab1 tabs. */
+/** Same order and captions as the legacy SSTab1 tabs of frmCaseInquiry. */
 const tabs = [
   'Case Det', 'Others', 'Take Over/Others', 'Mgmt Note', 'LG', 'WS', 'Inv', 'Pymt & Rcpt', 'Reminder', 'Non-Dis', 'Benefit', 'Exclusion',
   'Policy Terms', 'Surg Schedule', 'LifeTime', 'Forms', 'Policy', 'Carton', 'Emails',
@@ -21,9 +17,9 @@ type TabName = (typeof tabs)[number]
 function renderTab(tab: TabName, d: CaseDetail) {
   const n = d.header.caseNumber
   switch (tab) {
-    case 'Case Det': return <CaseDetailsTab d={d} />
-    case 'Others': return <CaseOthersTab d={d} />
-    case 'Take Over/Others': return <TakeOverTab d={d} />
+    case 'Case Det': return <CaseDetTab d={d} />
+    case 'Others': return <CaseOthersLegacyTab d={d} />
+    case 'Take Over/Others': return <TakeOverLegacyTab d={d} />
     case 'Mgmt Note': return <NotesTab d={d} />
     case 'LG': return <GuaranteesTab number={n} />
     case 'WS': return <WorksheetsTab number={n} />
@@ -43,48 +39,16 @@ function renderTab(tab: TabName, d: CaseDetail) {
   }
 }
 
-/** The legacy form enables "print payments" only with USRAccess position 178. */
-const PAYMENT_PRINT_POSITION = 178
-
-export function CaseDetailView({ caseNumber }: { caseNumber: string }) {
-  const { can } = useAuth()
+/** The 19 tabs of the legacy Case Inquiry form for one case. */
+export function CaseDetailView({ detail }: { detail: CaseDetail }) {
   const [tab, setTab] = useState(0)
-  const [printError, setPrintError] = useState<string | null>(null)
-  const query = useQuery({ queryKey: ['case', caseNumber], queryFn: () => casesApi.get(caseNumber) })
-
-  if (query.isLoading) return <CircularProgress />
-  if (query.error) return <Alert severity="error">{(query.error as Error).message}</Alert>
-  const d = query.data!
-
-  const print = async (kind: Parameters<typeof casesApi.print>[1]) => {
-    setPrintError(null)
-    try {
-      const name = kind === 'notes.pdf?kind=internal' ? 'internal-notes.pdf' : kind
-      download(await casesApi.print(caseNumber, kind), `case-${caseNumber}-${name}`)
-    } catch (e) {
-      setPrintError(e instanceof Error ? e.message : 'Print failed')
-    }
-  }
-
   return (
-    <Paper variant="outlined" sx={{ p: 2 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
-        <Typography variant="h6">{d.header.caseNumber}</Typography>
-        <Typography>{d.header.patientName}</Typography>
-        {d.header.status && <Chip size="small" label={withLabel(d.header.status, statusLabels)} color={d.header.status === 'O' ? 'success' : 'default'} />}
-        {d.hasScannedDocuments === false && <Chip size="small" variant="outlined" label="No scanned documents" />}
-        <Box sx={{ flexGrow: 1 }} />
-        <PrintButton label="Print (Excel)" onClick={() => print('enquiry.xlsx')} />
-        <PrintButton label="Notes (PDF)" onClick={() => print('notes.pdf')} />
-        <PrintButton label="Internal Notes (PDF)" onClick={() => print('notes.pdf?kind=internal')} />
-        {can(PAYMENT_PRINT_POSITION) && <PrintButton label="Payments (Excel)" onClick={() => print('payments.xlsx')} />}
-      </Box>
-      {printError && <Alert severity="error" sx={{ mb: 1 }}>{printError}</Alert>}
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ mb: 2 }}>
+    <>
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto"
+        sx={{ borderBottom: 1, borderColor: 'divider', minHeight: 34, '& .MuiTab-root': { minHeight: 34, textTransform: 'none', px: 1.25 } }}>
         {tabs.map((t) => <Tab key={t} label={t} />)}
       </Tabs>
-      {renderTab(tabs[tab], d)}
-    </Paper>
+      <Box sx={{ p: 1 }}>{renderTab(tabs[tab], detail)}</Box>
+    </>
   )
 }
-

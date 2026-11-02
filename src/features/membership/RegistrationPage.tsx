@@ -1,9 +1,11 @@
-﻿import { Alert, Box, Button, MenuItem, Paper, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, TextField, Typography } from '@mui/material'
+﻿import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { registrationApi, type RegistrationQuote, type RegistrationRequest, type RegistrationSupplementary } from '../../api/registration'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { DateField } from '../../components/DateField'
+import { LegacyFrame, LegacyRow as L, LegacyTitle } from '../../components/LegacyForm'
+import { legacyBox } from '../../components/legacyStyles'
 import { formatDate, formatMoney } from '../../lib/format'
 import { toDmy } from '../../lib/dates'
 
@@ -29,6 +31,7 @@ export function RegistrationPage() {
   const [quote, setQuote] = useState<RegistrationQuote | null>(null)
   const [confirming, setConfirming] = useState(false)
   const [message, setMessage] = useState<{ severity: 'success' | 'error' | 'warning'; text: string } | null>(null)
+  const [othersOpen, setOthersOpen] = useState(false)
 
   const healthPlans = options.data?.healthPlans ?? []
   const health = header.health || healthPlans.find((h) => h.code === 'S')?.code || healthPlans[0]?.code || ''
@@ -74,7 +77,14 @@ export function RegistrationPage() {
     onError: (e) => { setConfirming(false); setMessage({ severity: 'error', text: (e as Error).message }) },
   })
 
-  const text = (k: keyof Form, label: string, max?: number, extra: object = {}) => <TextField size="small" label={label} value={f[k]} onChange={setField(k)} slotProps={{ htmlInput: { maxLength: max } }} {...extra} />
+  const box = legacyBox
+  const T = (k: keyof Form, max?: number, extra: object = {}) => <TextField size="small" fullWidth sx={box} value={f[k]} onChange={setField(k)} slotProps={{ htmlInput: { maxLength: max } }} {...extra} />
+  const Sel = (k: keyof Form, items: [string, string][], w: number | string = '100%') => (
+    <TextField select size="small" sx={{ ...box, width: w }} value={f[k]} onChange={setField(k)}>{items.map(([c, l]) => <MenuItem key={c} value={c}>{l}</MenuItem>)}</TextField>
+  )
+  const D = (k: keyof Form) => <DateField sx={{ ...box, width: 140 }} value={f[k]} onChange={setDate(k)} />
+  const ro = (v: string | number | null | undefined, w: number | string = '100%') => <TextField size="small" sx={{ ...box, width: w }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
+  const t = (label: string, w = 85) => <Typography sx={{ fontSize: 13, width: w, flexShrink: 0, ml: 1 }}>{label}</Typography>
   const stext = (k: keyof Supp, label: string, max?: number) => <TextField size="small" label={label} value={sf[k]} onChange={(e) => setSf((x) => ({ ...x, [k]: e.target.value }))} slotProps={{ htmlInput: { maxLength: max } }} />
   const grid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 1.5 } as const
 
@@ -108,35 +118,49 @@ export function RegistrationPage() {
 
   const charged = (quote?.supplementary ?? [])
   return (
-    <>
-      <Typography variant="h5" gutterBottom>Member Registration</Typography>
-      {message && <Alert severity={message.severity} sx={{ mb: 2 }} onClose={() => setMessage(null)}>{message.text}</Alert>}
-      <Paper variant="outlined" sx={{ p: 1.5, mb: 1.5, ...grid }}>
-        <TextField select size="small" label="Renewal (Y/N)" value={f.renewal} onChange={setField('renewal')}>{['N', 'R', 'T', 'P'].map((v) => <MenuItem key={v} value={v}>{v}</MenuItem>)}</TextField>
-        {f.renewal === 'R' && text('prevMem', 'Prev Mem No', 30)}
-        {f.renewal === 'R' && text('prevPol', 'Prev. Pol. Num', 50)}
+    <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: 1 }}>
+      <LegacyTitle>Member Registration</LegacyTitle>
+      {message && <Alert severity={message.severity} onClose={() => setMessage(null)}>{message.text}</Alert>}
+      <Paper variant="outlined" sx={{ p: 1, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+        <Typography sx={{ fontSize: 13 }}>Renewal (Y/N)</Typography>{Sel('renewal', [['N', 'N'], ['R', 'R'], ['T', 'T'], ['P', 'P']], 80)}
+        <Typography sx={{ fontSize: 13, ml: 1 }}>Prev Mem No</Typography><Box sx={{ width: 190 }}>{T('prevMem', 30, { disabled: f.renewal !== 'R' })}</Box>
+        <Typography sx={{ fontSize: 13, ml: 1 }}>Prev. Pol. Num</Typography><Box sx={{ width: 220 }}>{T('prevPol', 50, { disabled: f.renewal !== 'R' })}</Box>
       </Paper>
-      <Paper variant="outlined" sx={{ p: 1.5, mb: 1.5, ...grid }}>
-        <TextField select size="small" label="Salutation" value={f.salutation} onChange={setField('salutation')}>{['MR', 'MRS', 'MS', 'MISS', 'DR', 'DATO', 'DATIN', 'TAN SRI', 'PUAN'].map((v) => <MenuItem key={v} value={v}>{v}</MenuItem>)}</TextField>
-        {text('name', 'Mem Name', 60, { required: true })}{text('ic', 'IC Num', 30, { required: true })}
-        <TextField size="small" label="Payor" value={`${header.payor} - ${payorName}`} disabled />{text('policy', 'Policy Num', 25, { required: true })}<TextField size="small" label="Health Type" value={header.health} disabled />
+      <Paper variant="outlined" sx={{ p: 1, display: 'grid', gap: 0.5 }}>
+        <L label="Salutation" w={75}>{Sel('salutation', ['MR', 'MRS', 'MS', 'MISS', 'DR', 'DATO', 'DATIN', 'TAN SRI', 'PUAN'].map((v) => [v, v]), 110)}{t('Mem Name', 75)}{T('name', 60, { required: true })}{t('IC Num', 60)}<Box sx={{ width: 220, flexShrink: 0 }}>{T('ic', 30, { required: true })}</Box></L>
+        <L label="Payor" w={75}>{ro(`${header.payor} - ${payorName}`, 260)}{t('Policy Num', 75)}{T('policy', 25, { required: true })}{t('Health Type', 75)}{ro(header.health, 80)}</L>
       </Paper>
       <Paper variant="outlined">
-        <Tabs value={tab} onChange={(_, v) => setTab(v)}><Tab label="Principal Details" /><Tab label={`Supplementary (${supp.length})`} /></Tabs>
-        <Box sx={{ p: 2 }} hidden={tab !== 0}>
-          <Box sx={grid}>
-            {text('a1', 'Address', 50, { required: true })}{text('a2', 'Address 2', 50)}{text('a3', 'Address 3', 50)}{text('post', 'PostCode', 6, { required: true })}{text('city', 'City/Town', 50)}{text('state', 'State', 50, { required: true })}
-            <TextField select size="small" label="Sex (M/F)" required value={f.sex} onChange={setField('sex')}><MenuItem value="M">M - Male</MenuItem><MenuItem value="F">F - Female</MenuItem></TextField>
-            <DateField label="Birthdate" required value={f.dob} onChange={setDate('dob')} />
-            {text('race', 'Race', 2)}{text('nationality', 'Nationality', 2)}{text('branch', 'Branch', 100)}{text('agent', 'Agent', 30)}
-            <TextField select size="small" label="Take Over" value={f.takeover} onChange={setField('takeover')}><MenuItem value="N">N - None</MenuItem><MenuItem value="Y">Y - Take Over</MenuItem><MenuItem value="C">C - Conversion</MenuItem></TextField>
-            {text('marital', 'Marital Status', 1)}{text('occupation', 'Occupation', 2)}{text('work', 'Work Nature', 3)}
-            <TextField select size="small" label="Instl mode" value={f.installment} onChange={setField('installment')}><MenuItem value="A">A - Annual</MenuItem><MenuItem value="Q">Q - Quarterly</MenuItem><MenuItem value="S">S - Semi Annual</MenuItem><MenuItem value="M">M - Monthly</MenuItem></TextField>
-            {text('insurer', 'Ins Type', 1, { required: true })}{text('plan', 'Plan Code', 4, { required: true })}
-            <DateField label="Eff Date" required value={f.eff} onChange={setDate('eff')} /><DateField label="Exp Date" required value={f.exp} onChange={setDate('exp')} />
-            <TextField size="small" label="Bordx. Date" value={toDmy(header.bordx)} disabled /><TextField size="small" label="Batch Num" value={header.batch} disabled />
-            {text('employee', "E'yee Num", 30)}{text('dept', 'Dept. Name', 100)}{text('group', 'Grp Company', 300)}{text('email', 'E-mail', 50)}{text('telH', 'Tel (home)', 12)}{text('telM', 'Tel (mobile)', 15)}{text('telO', 'Tel (office)', 15)}
-            {text('allergies', 'Allergies', 1000)}{text('exclusion', 'Principal Warranty / Exclusion', 8000)}{text('remarks', 'Remarks', 4000)}
+        <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ borderBottom: 1, borderColor: 'divider', minHeight: 34, '& .MuiTab-root': { minHeight: 34, textTransform: 'none' } }}>
+          <Tab label="Principal Details" /><Tab label={`Supplementary (${supp.length})`} />
+        </Tabs>
+        <Box sx={{ p: 1 }} hidden={tab !== 0}>
+          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', lg: '1.2fr 1fr' } }}>
+            <Box>
+              <L label="Address" w={85}>{T('a1', 50, { required: true })}</L>
+              <L label="" w={85}>{T('a2', 50)}</L>
+              <L label="" w={85}>{T('a3', 50)}</L>
+              <L label="PostCode" w={85}><Box sx={{ width: 110, flexShrink: 0 }}>{T('post', 6, { required: true })}</Box>{t('City/Town')}{T('city', 50)}</L>
+              <L label="State" w={85}>{T('state', 50, { required: true })}</L>
+              <L label="Sex (M/F)" w={85}>{Sel('sex', [['M', 'M - Male'], ['F', 'F - Female']], 110)}{t('Take Over')}{Sel('takeover', [['N', 'N - None'], ['Y', 'Y - Take Over'], ['C', 'C - Conversion']])}</L>
+              <L label="Birthdate" w={85}>{D('dob')}{t('Marital Status')}{T('marital', 1)}</L>
+              <L label="Race" w={85}><Box sx={{ width: 110, flexShrink: 0 }}>{T('race', 2)}</Box>{t('Nationality')}{T('nationality', 2)}</L>
+              <L label="Branch" w={85}>{T('branch', 100)}</L>
+              <L label="Agent" w={85}>{T('agent', 30)}</L>
+              <L label="Age Band" w={85}>{ro(quote ? `${quote.ageCode} (${quote.ageText})` : '', 110)}{t('Instl mode')}{Sel('installment', [['A', 'A - Annual'], ['Q', 'Q - Quarterly'], ['S', 'S - Semi Annual'], ['M', 'M - Monthly']])}</L>
+            </Box>
+            <Box>
+              <L label="Ins Type" w={85}><Box sx={{ width: 110, flexShrink: 0 }}>{T('insurer', 1, { required: true })}</Box>{t('Plan Code', 75)}{T('plan', 4, { required: true })}</L>
+              <L label="Eff Date" w={85}>{D('eff')}{t('Exp Date', 75)}{D('exp')}</L>
+              <L label="Bordx. Date" w={85}>{ro(toDmy(header.bordx), 140)}{t('Batch Num', 75)}{ro(header.batch, 140)}</L>
+              <L label="E'yee Num" w={85}>{T('employee', 30)}</L>
+              <L label="Dept. Name" w={85}>{T('dept', 100)}</L>
+              <L label="Grp Company" w={85}>{T('group', 300)}</L>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'grid', gap: 1, mt: 1, gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' } }}>
+            <LegacyFrame title="Principal Warranty">{T('exclusion', 8000, { multiline: true, minRows: 3 })}</LegacyFrame>
+            <LegacyFrame title="Remarks">{T('remarks', 4000, { multiline: true, minRows: 3 })}</LegacyFrame>
           </Box>
         </Box>
         <Box sx={{ p: 2, display: 'grid', gap: 2 }} hidden={tab !== 1}>
@@ -166,20 +190,36 @@ export function RegistrationPage() {
             </TableBody>
           </Table>
         </Box>
-        <Box sx={{ m: 2, mt: 0, p: 1, display: 'flex', gap: 3, flexWrap: 'wrap', bgcolor: 'grey.100', border: 1, borderColor: 'divider' }}>
+        <Box sx={{ m: 1, mt: 0, p: 1, display: 'flex', gap: 3, flexWrap: 'wrap', border: 1, borderColor: 'divider', fontSize: 13 }}>
           <span>Premium <strong>{quote ? formatMoney(quote.premium) : ''}</strong></span><span>MCO Fees <strong>{quote ? formatMoney(quote.mcoFee) : ''}</strong></span>
-          <span>Ann Limit <strong>{quote ? formatMoney(quote.annualLimit) : ''}</strong></span><span>Age Band <strong>{quote ? `${quote.ageCode} (${quote.ageText})` : ''}</strong></span>
+          <span>Ann Limit <strong>{quote ? formatMoney(quote.annualLimit) : ''}</strong></span>
           {quote && <span>Cover period <strong>{formatDate(quote.payorEffectiveDate)} - {formatDate(quote.payorExpiryDate)}</strong></span>}
         </Box>
       </Paper>
-      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 1.5 }}>
-        <Button variant="outlined" onClick={() => { setF(blankForm()); setSupp([]); setSf(blankSupp()); setQuote(null); setMessage(null) }}>Clear</Button>
-        <Button variant="contained" disabled={calc.isPending} onClick={() => { setMessage(null); calc.mutate() }}>Save</Button>
-        <Button variant="outlined" onClick={() => { setStarted(false); setQuote(null); setMessage(null) }}>Exit</Button>
-      </Box>
+      <Paper variant="outlined" sx={{ p: 1, display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+        <Button size="small" variant="outlined" onClick={() => setOthersOpen(true)}>Others Details</Button>
+        <Button size="small" variant="outlined" onClick={() => { setF(blankForm()); setSupp([]); setSf(blankSupp()); setQuote(null); setMessage(null) }}>Clear</Button>
+        <Button size="small" variant="contained" disabled={calc.isPending} onClick={() => { setMessage(null); calc.mutate() }}>Save</Button>
+        <Button size="small" variant="outlined" onClick={() => { setStarted(false); setQuote(null); setMessage(null) }}>Exit</Button>
+      </Paper>
+      <Dialog open={othersOpen} onClose={() => setOthersOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Others Details</DialogTitle>
+        <DialogContent>
+          <LegacyFrame>
+            <L label="E-mail" w={110}>{T('email', 50)}</L>
+            <L label="Tel (H)" w={110}>{T('telH', 12)}</L>
+            <L label="Tel (M)" w={110}>{T('telM', 15)}</L>
+            <L label="Tel (O)" w={110}>{T('telO', 15)}</L>
+            <L label="Occupation" w={110}>{T('occupation', 2)}</L>
+            <L label="Work Nature" w={110}>{T('work', 3)}</L>
+            <L label="Allergies" w={110}>{T('allergies', 1000, { multiline: true, minRows: 2 })}</L>
+          </LegacyFrame>
+        </DialogContent>
+        <DialogActions><Button onClick={() => setOthersOpen(false)}>Close</Button></DialogActions>
+      </Dialog>
       <ConfirmDialog open={confirming} busy={register.isPending} title="Save registration"
         message={`Are you sure? ${f.name} will be registered${supp.length ? ` with ${supp.length} supplementary person(s)` : ''}. Premium ${quote ? formatMoney(quote.premium) : ''}, MCO fees ${quote ? formatMoney(quote.mcoFee) : ''}. A new membership number is generated.`}
         onConfirm={() => register.mutate()} onCancel={() => setConfirming(false)} />
-    </>
+    </Box>
   )
 }

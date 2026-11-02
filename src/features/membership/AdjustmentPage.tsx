@@ -5,18 +5,12 @@ import { adjustmentApi, type AdjustmentMember, type CancellationQuote, type Plan
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { DateInput } from '../../components/DateField'
 import { Field, FieldGrid, RowsTable } from '../../components/DataTables'
+import { LegacyFrame, LegacyRow as L, LegacyTitle } from '../../components/LegacyForm'
+import { legacyBox, legacyYellow } from '../../components/legacyStyles'
 import { AdjustmentHistoryTab, CoveredPersonsList, FeesTab, MemberHistoryTab, MgmtNoteTab } from './AdjustmentTabs'
 import { formatDate, formatMoney } from '../../lib/format'
 
 type Form = Record<'name' | 'policyNo' | 'icBcPp' | 'dateOfBirth' | 'sex' | 'address1' | 'address2' | 'address3' | 'city' | 'state' | 'postCode' | 'race' | 'nationality' | 'salutation' | 'email' | 'telHome' | 'telMobile' | 'telOffice' | 'endorsementBordxDate' | 'effectiveDate' | 'batchNo', string>
-
-const textFields: { key: keyof Form; label: string; max: number; required?: boolean }[] = [
-  { key: 'name', label: 'Name', max: 60, required: true }, { key: 'icBcPp', label: 'IC / BC / Passport', max: 30, required: true }, { key: 'policyNo', label: 'Policy no', max: 25 },
-  { key: 'salutation', label: 'Salutation', max: 5 }, { key: 'address1', label: 'Address 1', max: 50 }, { key: 'address2', label: 'Address 2', max: 50 }, { key: 'address3', label: 'Address 3', max: 50 },
-  { key: 'city', label: 'City', max: 50 }, { key: 'state', label: 'State', max: 50 }, { key: 'postCode', label: 'Postcode', max: 6 }, { key: 'race', label: 'Race', max: 2 },
-  { key: 'nationality', label: 'Nationality', max: 10 }, { key: 'email', label: 'E-mail', max: 50 }, { key: 'telHome', label: 'Tel (home)', max: 12 }, { key: 'telMobile', label: 'Tel (mobile)', max: 15 },
-  { key: 'telOffice', label: 'Tel (office)', max: 15 },
-]
 
 const toForm = (m: AdjustmentMember): Form => ({
   name: m.name ?? '', policyNo: m.policyNo ?? '', icBcPp: m.icBcPp ?? '', dateOfBirth: m.dateOfBirth ?? '', sex: m.sex ?? '', address1: m.address1 ?? '', address2: m.address2 ?? '', address3: m.address3 ?? '',
@@ -164,68 +158,66 @@ export function AdjustmentPage() {
     if (v === 1 && member && !['F', 'H'].includes(member.insurer?.trim() ?? '')) { setMessage({ severity: 'error', text: 'This Plan does not have supplementary' }); return }
     setTab(v)
   }
-  const strip = { p: 1.5, mb: 1.5, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 1.5 } as const
-  const ro = (label: string, value: string | null | undefined) => <TextField size="small" label={label} value={value ?? ''} disabled slotProps={{ inputLabel: { shrink: true } }} />
+  const box = legacyBox
+  const ro = (v: string | number | null | undefined, w: number | string = '100%', sx: object = box) => <TextField size="small" sx={{ ...sx, width: w }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
+  const E = (k: keyof Form, max: number, w: number | string = '100%', required = false) => <TextField size="small" sx={{ ...box, width: w }} required={required} value={form?.[k] ?? ''} onChange={set(k)} slotProps={{ htmlInput: { maxLength: max } }} />
+  const ED = (k: keyof Form, w = 140) => <DateInput sx={{ ...box, width: w }} value={form?.[k] ?? ''} onChange={set(k)} />
+  const t = (label: string, w = 85) => <Typography sx={{ fontSize: 13, width: w, flexShrink: 0, ml: 1 }}>{label}</Typography>
+  const [othersOpen, setOthersOpen] = useState(false)
 
   return (
-    <>
-      <Typography variant="h5" gutterBottom>Member Adjustment</Typography>
-      <Paper variant="outlined" sx={{ p: 1.5, mb: 1.5 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: 1 }}>
+      <LegacyTitle>Member Adjustment</LegacyTitle>
+      <Paper variant="outlined" sx={{ p: 1 }}>
         <Box component="form" onSubmit={submit} sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-          <TextField size="small" label="Mem Num." value={number} onChange={(e) => setNumber(e.target.value)} sx={{ width: 280 }} autoFocus />
-          <Button type="submit" variant="contained" disabled={!number.trim() || load.isPending}>Go</Button>
-          <Button variant="outlined" disabled={!number.trim() || step.isPending} onClick={() => step.mutate('previous')}>Pre</Button>
-          <Button variant="outlined" disabled={!number.trim() || step.isPending} onClick={() => step.mutate('next')}>Next</Button>
-          <Button variant="outlined" onClick={() => { setSearchOpen(true); search.reset() }}>Search</Button>
+          <Typography sx={{ fontSize: 13 }}>Mem Num.</Typography>
+          <TextField size="small" sx={{ ...box, width: 220 }} value={number} onChange={(e) => setNumber(e.target.value)} autoFocus slotProps={{ htmlInput: { maxLength: 15 } }} />
+          <Button size="small" type="submit" variant="outlined" disabled={!number.trim() || load.isPending}>Go</Button>
+          <Button size="small" variant="outlined" disabled={!number.trim() || step.isPending} onClick={() => step.mutate('previous')}>Pre</Button>
+          <Button size="small" variant="outlined" disabled={!number.trim() || step.isPending} onClick={() => step.mutate('next')}>Next</Button>
+          <Button size="small" variant="outlined" onClick={() => { setSearchOpen(true); search.reset() }}>Search</Button>
         </Box>
       </Paper>
-      {message && <Alert severity={message.severity} sx={{ mb: 2 }} onClose={() => setMessage(null)}>{message.text}</Alert>}
+      {message && <Alert severity={message.severity} onClose={() => setMessage(null)}>{message.text}</Alert>}
+      {!member && <Paper variant="outlined" sx={{ p: 2 }}><Typography color="text.secondary">Enter the membership number and click Go, or Search.</Typography></Paper>}
       {member && form && (
         <>
-          <Paper variant="outlined" sx={strip}>
-            {ro('Endt. Status', detail?.endorseType)}{ro('Pol. Status', member.status)}{ro('Exp. Status', detail?.expiredStatus)}{ro('Data Status', detail?.dataStatus)}
-            {ro('Bat. Num', member.batchNo?.toString())}{ro('Endt Eff Date', detail?.endorsementDate ? formatDate(detail.endorsementDate) : '')}
+          <Paper variant="outlined" sx={{ p: 1, display: 'grid', gap: 0.5 }}>
+            <L label="Endt. Status" w={95}>{ro(detail?.endorseType, 150)}{t('Pol. Status')}{ro(member.status, 110, legacyYellow)}{t('Exp. Status')}{ro(detail?.expiredStatus, 90)}{t('Bat. Num', 70)}{E('batchNo', 6, 80, true)}</L>
+            <L label="Endt Eff Date" w={95}>{ED('effectiveDate', 150)}{t('Endt Bordx Date')}{ED('endorsementBordxDate', 110)}{t('Data Status')}{ro(detail?.dataStatus, 90)}{t('Last Endt', 70)}{ro(detail?.endorsementDate ? formatDate(detail.endorsementDate) : '', 110)}</L>
           </Paper>
-          <Paper variant="outlined" sx={strip}>
-            {ro('Salutation', form.salutation)}{ro('Mem Name', form.name)}{ro('IC. Num', form.icBcPp)}{ro('Payor', member.payor)}{ro('Policy Num', form.policyNo)}{ro('Hlt Type', detail?.healthCode)}
+          <Paper variant="outlined" sx={{ p: 1, display: 'grid', gap: 0.5 }}>
+            <L label="Salutation" w={75}>{E('salutation', 5, 90)}{t('Mem Name', 75)}{E('name', 60, '100%', true)}{t('IC. Num', 60)}<Box sx={{ width: 220, flexShrink: 0 }}>{E('icBcPp', 30, '100%', true)}</Box></L>
+            <L label="Payor" w={75}>{ro(member.payor, 90)}{t('Policy Num', 75)}{E('policyNo', 25)}{t('Hlt Type', 60)}<Box sx={{ width: 220, flexShrink: 0 }}>{ro(detail?.healthCode)}</Box></L>
           </Paper>
           <Paper variant="outlined">
-            <Tabs value={tab} onChange={(_, v) => openTab(v)} variant="scrollable">
+            <Tabs value={tab} onChange={(_, v) => openTab(v)} variant="scrollable" sx={{ borderBottom: 1, borderColor: 'divider', minHeight: 34, '& .MuiTab-root': { minHeight: 34, textTransform: 'none' } }}>
               <Tab label="Principal Details" /><Tab label="Supplementary" /><Tab label="Adjustment History" /><Tab label="Fees" /><Tab label="MBM History" /><Tab label="Mgmt Note" />
             </Tabs>
-            <Box sx={{ p: 2 }} hidden={tab !== 0}>
-              <Box sx={{ ...strip, p: 0 }}>
-                {ro('Ins Type', member.insurer)}{ro('Plan Code', member.plan)}{ro('Eff Date', formatDate(member.payorEffectiveDate))}{ro('Exp Date', formatDate(member.payorExpiryDate))}
-                {ro('Final Exp Date', formatDate(detail?.finalExpiryDate))}{ro('DOR', formatDate(detail?.valueDate))}{ro('Bordx. Date', formatDate(detail?.bordxDate))}{ro('Batch Num', member.batchNo?.toString())}
-                {ro('Pol. Year', detail?.policyYear)}{ro('Grp. Company', detail?.groupCompany)}{ro('Renewal', detail?.renewFlag)}{ro('Take Over', detail?.takeover)}{ro('Age Band', detail?.ageCode)}{ro('Branch', detail?.branchCode)}
-              </Box>
-              <Box sx={{ mt: 2 }}>
-      {member && form && (
-        <Paper variant="outlined" sx={{ p: 2, display: 'grid', gap: 2 }}>
-          <FieldGrid>
-            <Field label="Member no" value={member.memberNumber} /><Field label="Status" value={member.status} /><Field label="Plan" value={member.plan} />
-            <Field label="Payor effective" value={formatDate(member.payorEffectiveDate)} /><Field label="Payor expiry" value={formatDate(member.payorExpiryDate)} />
-          </FieldGrid>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 1.5 }}>
-            {textFields.map((f) => <TextField key={f.key} size="small" label={f.label} required={f.required} value={form[f.key]} onChange={set(f.key)} slotProps={{ htmlInput: { maxLength: f.max } }} />)}
-            <DateInput label="Date of birth" required value={form.dateOfBirth} onChange={set('dateOfBirth')} slotProps={{ inputLabel: { shrink: true } }} />
-            <TextField select size="small" label="Sex" required value={form.sex} onChange={set('sex')}><MenuItem value="M">M - Male</MenuItem><MenuItem value="F">F - Female</MenuItem></TextField>
-          </Box>
-          <Typography variant="subtitle2">Endorsement</Typography>
-          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-            <DateInput label="Endorsement bordx date" required value={form.endorsementBordxDate} onChange={set('endorsementBordxDate')} slotProps={{ inputLabel: { shrink: true } }} />
-            <DateInput label="Effective date" required value={form.effectiveDate} onChange={set('effectiveDate')} slotProps={{ inputLabel: { shrink: true } }} />
-            <TextField size="small" type="number" label="Batch no" required value={form.batchNo} onChange={set('batchNo')} sx={{ width: 120 }} />
-          </Box>
-          <Box><Button variant="contained" onClick={() => { setMessage(null); setConfirming(true) }} disabled={save.isPending}>Update</Button></Box>
-        </Paper>
-      )}
-              </Box>
-              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 2 }}>
-                <Button variant="outlined" disabled>Others Details</Button>
-                <Button variant="outlined" disabled={member.status === 'C' || member.status === 'D'} onClick={() => setShowEdit((v) => !v)}>Edit Status</Button>
-                <Button variant="contained" disabled={save.isPending} onClick={() => { setMessage(null); setConfirming(true) }}>Save</Button>
-                <Button variant="outlined" onClick={() => { setMember(null); setForm(null); setNumber(''); setMessage(null) }}>Exit</Button>
+            <Box sx={{ p: 1 }} hidden={tab !== 0}>
+              <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', lg: '1.2fr 1fr' } }}>
+                <Box>
+                  <L label="Address" w={85}>{E('address1', 50)}</L>
+                  <L label="" w={85}>{E('address2', 50)}</L>
+                  <L label="" w={85}>{E('address3', 50)}</L>
+                  <L label="PostCode" w={85}>{E('postCode', 6, 110)}{t('City/Town')}{E('city', 50)}</L>
+                  <L label="State" w={85}>{E('state', 50)}</L>
+                  <L label="Sex" w={85}>
+                    <TextField select size="small" sx={{ ...box, width: 110 }} required value={form.sex} onChange={set('sex')}><MenuItem value="M">M - Male</MenuItem><MenuItem value="F">F - Female</MenuItem></TextField>
+                    {t('TakeOver')}{ro(detail?.takeover)}
+                  </L>
+                  <L label="Birthdate" w={85}>{ED('dateOfBirth', 110)}{t('Age Band')}{ro(detail?.ageCode)}</L>
+                  <L label="Race" w={85}>{E('race', 2, 110)}{t('Nationality')}{E('nationality', 10)}</L>
+                  <L label="Renewal" w={85}>{ro(detail?.renewFlag, 110)}{t('Branch')}{ro(detail?.branchCode)}</L>
+                </Box>
+                <Box>
+                  <L label="Ins Type" w={95}>{ro(member.insurer, 110)}{t('Plan Code', 75)}{ro(member.plan)}</L>
+                  <L label="Eff Date" w={95}>{ro(formatDate(member.payorEffectiveDate), 110)}{t('Exp Date', 75)}{ro(formatDate(member.payorExpiryDate))}</L>
+                  <L label="Final Exp Date" w={95}>{ro(formatDate(detail?.finalExpiryDate), 110)}{t('DOR', 75)}{ro(formatDate(detail?.valueDate))}</L>
+                  <L label="Bordx. Date" w={95}>{ro(formatDate(detail?.bordxDate), 110)}{t('Batch Num', 75)}{ro(member.batchNo?.toString())}</L>
+                  <L label="Pol. Year" w={95}>{ro(detail?.policyYear, 110)}</L>
+                  <L label="Grp. Company" w={95}>{ro(detail?.groupCompany)}</L>
+                </Box>
               </Box>
               {showEdit && <Box sx={{ mt: 1 }}>
       {member && form && member.status !== 'C' && member.status !== 'D' && (
@@ -377,13 +369,32 @@ export function AdjustmentPage() {
         </Paper>
       )}
             </Box>
-            <Box sx={{ p: 2 }}>
+            <Box sx={{ p: tab >= 2 ? 1 : 0 }}>
               {tab === 2 && <AdjustmentHistoryTab number={member.memberNumber} />}
               {tab === 3 && <FeesTab number={member.memberNumber} />}
               {tab === 4 && <MemberHistoryTab number={member.memberNumber} />}
               {tab === 5 && <MgmtNoteTab key={member.memberNumber} number={member.memberNumber} initial={overview.data?.managementNote ?? null} />}
             </Box>
           </Paper>
+          <Paper variant="outlined" sx={{ p: 1, display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+            <Button size="small" variant="outlined" onClick={() => setOthersOpen(true)}>Others Details</Button>
+            <Button size="small" variant="outlined" disabled={member.status === 'C' || member.status === 'D'} onClick={() => { setTab(0); setShowEdit((v) => !v) }}>Edit Status</Button>
+            <Button size="small" variant="contained" disabled={save.isPending} onClick={() => { setMessage(null); setConfirming(true) }}>Save</Button>
+            <Button size="small" variant="outlined" onClick={() => { setMember(null); setForm(null); setNumber(''); setMessage(null) }}>Exit</Button>
+          </Paper>
+          <Dialog open={othersOpen} onClose={() => setOthersOpen(false)} maxWidth="sm" fullWidth>
+            <DialogTitle>Others Details</DialogTitle>
+            <DialogContent>
+              <LegacyFrame>
+                <L label="E-mail" w={100}>{E('email', 50)}</L>
+                <L label="Tel (H)" w={100}>{E('telHome', 12)}</L>
+                <L label="Tel (M)" w={100}>{E('telMobile', 15)}</L>
+                <L label="Tel (O)" w={100}>{E('telOffice', 15)}</L>
+              </LegacyFrame>
+              <Typography variant="caption" color="text.secondary">Saved with the rest of the amendment (Save).</Typography>
+            </DialogContent>
+            <DialogActions><Button onClick={() => setOthersOpen(false)}>Close</Button></DialogActions>
+          </Dialog>
         </>
       )}
       <Dialog open={searchOpen} onClose={() => setSearchOpen(false)} maxWidth="md" fullWidth>
@@ -407,8 +418,6 @@ export function AdjustmentPage() {
       <ConfirmDialog open={pcConfirming} busy={changePc.isPending} title="Change plan" message={`Do you want to change ${member?.memberNumber} to plan ${pc.plan}? The new fees are recorded and a refund is calculated from ${formatDate(pc.effective)}.`} onConfirm={() => changePc.mutate()} onCancel={() => setPcConfirming(false)} />
       <ConfirmDialog open={cxConfirming} busy={cancelCx.isPending} title="Cancel membership" message={`Do you want to cancel ${member?.memberNumber} effective ${formatDate(cx.cancelDate)}? The covered persons are cancelled too and the refund is recorded.`} onConfirm={() => cancelCx.mutate()} onCancel={() => setCxConfirming(false)} />
       <ConfirmDialog open={confirming} busy={save.isPending} title="Save amendment" message={`Do you want to save the amendment for ${member?.memberNumber}? An amendment history entry will be recorded.`} onConfirm={() => save.mutate()} onCancel={() => setConfirming(false)} />
-    </>
+    </Box>
   )
 }
-
-

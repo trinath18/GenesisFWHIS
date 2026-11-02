@@ -97,10 +97,8 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Upload Bordx",
-                             "positions":  [
-                                               8
-                                           ],
-                             "legacyForm":  "FrmNewMBMEndt2012"
+                             "route":  "/membership/bordx-upload",
+                             "positions":  8
                          },
                          {
                              "label":  "Upload Bordx 2010",

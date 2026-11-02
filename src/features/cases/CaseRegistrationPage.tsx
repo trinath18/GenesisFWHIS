@@ -1,16 +1,22 @@
-﻿import { Alert, Autocomplete, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, MenuItem, Paper, TextField, Typography } from '@mui/material'
+﻿import { Alert, Autocomplete, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, MenuItem, Paper, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { CaseAfterRegistration } from './CaseAfterRegistration'
-import { CaseRegistrationTabs } from './CaseRegistrationTabs'
+import { CaseLgTab, CaseWorksheetTab } from './CaseAdjustmentTabs'
+import { CaseManagementNote, CaseMemberTab } from './CaseRegistrationTabs'
+import { memberTabs, memberTabsAfterNotes, type MemberTab } from './memberTabList'
 import { CaseSearchDialog } from './CaseSearchDialog'
 import { ApiError } from '../../api/client'
-import { caseAdjustmentApi, caseRegistrationApi, type CaseDiagnosis, type CaseMemberView, type CaseRegistrationRequest } from '../../api/caseRegistration'
+import { caseAdjustmentApi, caseRegistrationApi, type CaseDiagnosis, type CaseMemberView, type CaseRegistrationRequest, type DraftLetterKind } from '../../api/caseRegistration'
 import { DateField } from '../../components/DateField'
+import { LegacyFrame, LegacyRow as L, LegacyTitle } from '../../components/LegacyForm'
+import { legacyBox as box, legacyYellow as yellow } from '../../components/legacyStyles'
 import { toDmy } from '../../lib/dates'
+import { download } from '../../lib/download'
 import { formatMoney } from '../../lib/format'
 
-const yn = [['N', 'N - No'], ['Y', 'Y - Yes']]
+const yn: [string, string][] = [['N', 'N - No'], ['Y', 'Y - Yes']]
 const blank = {
   patientId: '', claimability: 'AA', hospitalCode: '', hospitalName: '', dateAdmitted: '', dateDischarge: '', pending: 'N', reserve: '', lg: '', lgTime: '', payType: 'C', stayType: 'I', modality: '', nature: '', special: '', topUp: 'N', query: 'N', link: '',
   referredBy: '', reason: '', docDate: '', policyYear: '', esp: '', takeOverInd: 'N', takeOverAmt: '', takeOverPlan: '', intExt: '', age: '', ageUnit: 'Y', firstCall: '', firstTreated: '', payPending: 'N', followUp: 'N', recur: 'N', followReq: 'N',
@@ -19,6 +25,7 @@ const blank = {
   docs: ['', '', '', '', ''], anae: ['', '', ''], procs: Array.from({ length: 6 }, () => ({ text: '', cpt: '' })), nons: Array.from({ length: 6 }, () => ({ text: '', cpt: '' })), invs: Array.from({ length: 3 }, () => ({ done: '', code: '' })), med: ['', '', ''], firstDoc: '', subDoc: '',
 }
 type Form = typeof blank
+type Diag = { code: string; text: string; date: string }
 const dmyText = (iso: string) => (iso ? toDmy(iso) : null)
 const str = (v: number | null | undefined) => (v === null || v === undefined ? '' : String(v))
 const dmyToIso = (s: string | null) => { const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s ?? ''); return m ? `${m[3]}-${m[2]}-${m[1]}` : '' }
@@ -34,9 +41,17 @@ const toForm = (r: CaseRegistrationRequest): Form => ({
   invs: pad((r.investigations ?? []).map((i) => ({ done: i.done ?? '', code: i.code ?? '' })), 3, { done: '', code: '' }), med: pad(r.medicalManagement, 3, ''), firstDoc: r.firstDocDate ?? '', subDoc: r.subsequentDocDate ?? '',
 })
 
-/** Legacy: Case > Case Registration (frmCaseAdmission), policy lookup, patient, case details, remarks, first / final / underlying diagnoses, repudiation and the limit deduction.  */
+type TabKey = 'general' | 'details' | 'others' | 'takeover' | 'notes' | 'lg' | 'worksheet' | MemberTab
+
+/**
+ * Legacy: Case > Case Registration (frmCaseAdmission) and Case > Case Adjustment (frmCaseAdjustmentNew). The member (or case) across the top with Cas
+ * Status, Claimability and Pending; the policy holder's details; the tabs General Info, Case Details, Case Others, Take Over/Others, Benefit, MBM'Ship
+ * History, Warranty, Non-Disclosure, Case Mgmt Notes, Policy Terms, Surgical Schedule, Policy Wording (and LG and Worksheet on an adjustment); and LG,
+ * Notification, T.Home Drugs, Doc Req Adm, Doc Req Discharge, the case number and Register / Clear / Exit along the bottom.
+ */
 export function CaseRegistrationPage({ mode = 'register' }: { mode?: 'register' | 'adjust' }) {
   const adjust = mode === 'adjust'
+  const navigate = useNavigate()
   const options = useQuery({ queryKey: ['case-reg-options', mode], queryFn: adjust ? caseAdjustmentApi.options : caseRegistrationApi.options })
   const [number, setNumber] = useState('')
   const [member, setMember] = useState<CaseMemberView | null>(null)
@@ -52,6 +67,9 @@ export function CaseRegistrationPage({ mode = 'register' }: { mode?: 'register' 
   const [status, setStatus] = useState('O')
   const [adjusted, setAdjusted] = useState<{ no: string; by: string | null; on: string | null } | null>(null)
   const [registered, setRegistered] = useState<{ caseNumber: string; letters: string[]; lg: number | null; lgTime: string | null } | null>(null)
+  const [tab, setTab] = useState<TabKey>('details')
+  const [lgOpen, setLgOpen] = useState(false)
+  const [today] = useState(() => new Date().toISOString().slice(0, 10))
 
   const load = useMutation({
     mutationFn: (no: string) => caseAdjustmentApi.get(no.trim()),
@@ -73,11 +91,11 @@ export function CaseRegistrationPage({ mode = 'register' }: { mode?: 'register' 
     },
   })
   const show = useMutation({
-    mutationFn: () => caseRegistrationApi.member(number.trim()),
-    onSuccess: (m) => { setMember(m); setF({ ...blank, patientId: '00' }); setAck({ long: false, recent: false, open: false }); setMessage(m.blockedReason ? { severity: 'error', text: m.blockedReason } : m.warnings.length ? { severity: 'warning', text: m.warnings.join(' ') } : null) },
+    mutationFn: (no: string) => caseRegistrationApi.member(no.trim()),
+    onSuccess: (m) => { setMember(m); setNumber(m.memberNumber); setF({ ...blank, patientId: '00' }); setAck({ long: false, recent: false, open: false }); setRegistered(null); setTab('details'); setMessage(m.blockedReason ? { severity: 'error', text: m.blockedReason } : m.warnings.length ? { severity: 'warning', text: m.warnings.join(' ') } : null) },
     onError: (e) => { setMember(null); setMessage({ severity: 'error', text: (e as Error).message }) },
   })
-  const diag = (d: { code: string; text: string; date: string }): CaseDiagnosis => ({ code: d.code || null, text: d.text || null, date: d.date || null })
+  const diag = (d: Diag): CaseDiagnosis => ({ code: d.code || null, text: d.text || null, date: d.date || null })
   const request = (a = ack): CaseRegistrationRequest => ({
     memberNumber: member!.memberNumber, patientId: f.patientId, claimability: f.claimability, hospitalCode: f.hospitalCode, hospitalName: f.hospitalName || null, dateAdmitted: f.dateAdmitted || null, dateDischarge: f.dateDischarge || null, pending: f.pending || null,
     reserveAmount: f.reserve === '' ? null : Number(f.reserve), lgAmount: f.lg === '' ? null : Number(f.lg), lgTime: f.lgTime || null, payType: f.payType, stayType: f.stayType || null, modality: f.modality || null, nature: f.nature || null, specialApproval: f.special || null,
@@ -92,7 +110,7 @@ export function CaseRegistrationPage({ mode = 'register' }: { mode?: 'register' 
   })
   const register = useMutation({
     mutationFn: (a: typeof ack) => caseRegistrationApi.register(request(a)),
-    onSuccess: (r) => { setConfirming(false); setPrompt(null); setMessage({ severity: 'success', text: r.message }); setRegistered({ caseNumber: r.caseNumber, letters: r.letters, lg: f.lg === '' ? null : Number(f.lg), lgTime: f.lgTime || null }); setMember(null); setNumber(''); setF(blank); setAck({ long: false, recent: false, open: false }) },
+    onSuccess: (r) => { setConfirming(false); setPrompt(null); setMessage({ severity: 'success', text: r.message }); setRegistered({ caseNumber: r.caseNumber, letters: r.letters, lg: f.lg === '' ? null : Number(f.lg), lgTime: f.lgTime || null }) },
     onError: (e) => {
       setConfirming(false)
       if (e instanceof ApiError && e.status === 409) {
@@ -102,149 +120,287 @@ export function CaseRegistrationPage({ mode = 'register' }: { mode?: 'register' 
       setMessage({ severity: 'error', text: (e as Error).message })
     },
   })
+  const clear = () => { setNumber(''); setCaseNo(''); setMember(null); setF(blank); setMessage(null); setRegistered(null); setAdjusted(null); setTab('details') }
+
   const set = <K extends keyof Form>(k: K) => (e: { target: { value: string } }) => setF((x) => ({ ...x, [k]: e.target.value }))
-  const text = (label: string, k: keyof Form, props: Record<string, unknown> = {}) => <TextField size="small" label={label} value={f[k] as string} onChange={set(k)} {...props} />
-  const select = (label: string, k: keyof Form, items: [string, string][], width = 170, required = false) => <TextField select size="small" label={label} required={required} value={f[k] as string} onChange={set(k)} sx={{ width }}>{items.map(([c, n]) => <MenuItem key={c} value={c}>{n}</MenuItem>)}</TextField>
   const opt = (list?: { code: string; name: string }[]): [string, string][] => (list ?? []).map((o) => [o.code, `${o.code} - ${o.name}`])
-  const setDiag = (which: 'first' | 'final' | 'ud', i: number, patch: Partial<{ code: string; text: string; date: string }>) => setF((x) => ({ ...x, [which]: x[which].map((d, j) => (j === i ? { ...d, ...patch } : d)) }))
+  const T = (k: keyof Form, props: Record<string, unknown> = {}) => <TextField size="small" fullWidth sx={box} value={f[k] as string} onChange={set(k)} {...props} />
+  const S = (k: keyof Form, items: [string, string][], width: number | string = '100%', none = false) => (
+    <TextField select size="small" sx={{ ...box, width }} value={f[k] as string} onChange={set(k)}>
+      {none && <MenuItem value="">&nbsp;</MenuItem>}{items.map(([c, n]) => <MenuItem key={c} value={c}>{n}</MenuItem>)}
+    </TextField>
+  )
+  const D = (k: 'dateAdmitted' | 'dateDischarge' | 'firstCall' | 'firstTreated' | 'docDate' | 'firstDoc' | 'subDoc') => <DateField sx={{ ...box, width: 130 }} value={f[k]} onChange={(iso) => setF((x) => ({ ...x, [k]: iso }))} />
+  const setDiag = (which: 'first' | 'final' | 'ud', i: number, patch: Partial<Diag>) => setF((x) => ({ ...x, [which]: x[which].map((d, j) => (j === i ? { ...d, ...patch } : d)) }))
   const repudiating = ['RR', 'NR', 'PR', 'AR', 'BR', 'ER'].includes(f.claimability)
   const blocked = !adjust && !!member?.blockedReason
   const hospitalOptions = hospitals.data ?? []
+  const patient = member?.patients.find((p) => p.coverId === f.patientId)
+  const savedCase = adjust ? adjusted?.no ?? null : registered?.caseNumber ?? null
+  const expired = !!member?.expiryDate && member.expiryDate < today
+  const area = adjust ? 'adjustment' : 'registration'
+
+  const draft = async (kind: DraftLetterKind) => {
+    setMessage(null)
+    try {
+      const r = { memberNumber: member?.memberNumber ?? null, patientId: f.patientId || null, hospitalCode: f.hospitalCode || null, hospitalName: f.hospitalName || null, admitted: f.dateAdmitted || null, discharged: f.dateDischarge || null, caseNumber: savedCase }
+      const file = await (adjust ? caseAdjustmentApi : caseRegistrationApi).draftLetter(kind, r)
+      download(file.blob, file.fileName)
+    } catch (e) { setMessage({ severity: 'error', text: (e as Error).message }) }
+  }
+  // Legacy cmdPrior_Click: the policy ending notice when the policy ends this month, the expired notice once it has ended.
+  const notification = async () => {
+    if (!savedCase || !member?.expiryDate) return
+    const kind = member.expiryDate < today ? 'expired' : member.expiryDate.slice(0, 7) === today.slice(0, 7) ? 'policy-ending' : null
+    if (!kind) { setMessage({ severity: 'info', text: 'The policy does not end this month, so no notification is due.' }); return }
+    try { download(await caseRegistrationApi.letter(savedCase, kind), `${kind}-${savedCase}.pdf`) } catch (e) { setMessage({ severity: 'error', text: (e as Error).message }) }
+  }
+
+  const diagFrame = (which: 'first' | 'final' | 'ud', title: string, required = false) => (
+    <LegacyFrame>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 140px 190px', gap: 0.5, fontSize: 13 }}>
+        <Typography sx={{ fontSize: 13 }}>{title}</Typography><Typography sx={{ fontSize: 13 }}>Date OnSet</Typography><Typography sx={{ fontSize: 13 }}>ICD</Typography>
+        {f[which].map((d, i) => [
+          <TextField key={`t${i}`} size="small" sx={box} value={d.text} onChange={(e) => setDiag(which, i, { text: e.target.value })} slotProps={{ htmlInput: { maxLength: 150 } }} />,
+          <DateField key={`d${i}`} sx={box} value={d.date} onChange={(iso) => setDiag(which, i, { date: iso })} />,
+          <Autocomplete key={`c${i}`} size="small" options={options.data?.icd ?? []} getOptionLabel={(o) => `${o.code} - ${o.name}`} value={(options.data?.icd ?? []).find((o) => o.code === d.code) ?? null}
+            onChange={(_, v) => setDiag(which, i, { code: v?.code ?? '', text: d.text || (v?.name ?? '') })} renderInput={(p) => <TextField {...p} sx={box} required={required && i === 0 && f.payType === 'C'} />} />,
+        ])}
+      </Box>
+    </LegacyFrame>
+  )
+  const list = (key: 'docs' | 'anae' | 'med', title: string, max: number) => (
+    <LegacyFrame title={title}>
+      {f[key].map((v, i) => <TextField key={i} size="small" sx={box} value={v} onChange={(e) => setF((x) => ({ ...x, [key]: x[key].map((y, j) => (j === i ? e.target.value : y)) }))} slotProps={{ htmlInput: { maxLength: key === 'docs' && i === 0 ? 100 : max } }} />)}
+    </LegacyFrame>
+  )
+  const procFrame = (key: 'procs' | 'nons', title: string, max: number) => (
+    <LegacyFrame>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 110px', gap: 0.5 }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{title}</Typography><Typography sx={{ fontSize: 13, fontWeight: 600 }}>OPCS</Typography>
+        {f[key].map((p, i) => [
+          <TextField key={`t${i}`} size="small" sx={box} value={p.text} onChange={(e) => setF((x) => ({ ...x, [key]: x[key].map((v, j) => (j === i ? { ...v, text: e.target.value } : v)) }))} slotProps={{ htmlInput: { maxLength: max } }} />,
+          <TextField key={`c${i}`} size="small" sx={box} value={p.cpt} onChange={(e) => setF((x) => ({ ...x, [key]: x[key].map((v, j) => (j === i ? { ...v, cpt: e.target.value } : v)) }))} slotProps={{ htmlInput: { maxLength: 6 } }} />,
+        ])}
+      </Box>
+    </LegacyFrame>
+  )
+  const tabList: [TabKey, string][] = [
+    ['general', 'General Info'], ['details', 'Case Details'], ['others', 'Case Others'], ['takeover', 'Take Over/Others'], ...memberTabs, ['notes', 'Case Mgmt Notes'], ...memberTabsAfterNotes,
+    ...(adjust && adjusted ? [['lg', 'LG'], ['worksheet', 'Worksheet']] as [TabKey, string][] : []),
+  ]
+  const panel: Record<string, () => ReactNode> = {
+    general: () => (
+      <Box sx={{ display: 'grid', gap: 1 }}>
+        <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1.4fr 1fr' } }}>
+          <Box>
+            {[['Add', member?.address1], ['', member?.address2], ['', member?.address3]].map(([l, v], i) => <L key={i} label={l ?? ''} w={60}><TextField size="small" fullWidth sx={box} value={v ?? ''} slotProps={{ input: { readOnly: true } }} /></L>)}
+            <L label="PCode" w={60}><TextField size="small" sx={{ ...box, width: 110 }} value={member?.postCode ?? ''} slotProps={{ input: { readOnly: true } }} /><Typography sx={{ fontSize: 13 }}>Town</Typography><TextField size="small" fullWidth sx={box} value={member?.city ?? ''} slotProps={{ input: { readOnly: true } }} /></L>
+            <L label="State" w={60}><TextField size="small" fullWidth sx={box} value={member?.state ?? ''} slotProps={{ input: { readOnly: true } }} /></L>
+            <L label="Pol Num" w={60}><TextField size="small" fullWidth sx={box} value={member?.policyNo ?? ''} slotProps={{ input: { readOnly: true } }} /></L>
+          </Box>
+          <Box>
+            <L label="Ann Lmt" w={110}><TextField size="small" sx={box} value={member?.annualLimit == null ? '' : formatMoney(member.annualLimit)} slotProps={{ input: { readOnly: true } }} /></L>
+            <L label="Avail. Lmt" w={110}><TextField size="small" sx={box} value={member?.availableLimit == null ? '' : formatMoney(member.availableLimit)} slotProps={{ input: { readOnly: true } }} error={(member?.availableLimit ?? 1) <= 2000} /></L>
+            <L label="Insured Type" w={110}><TextField size="small" sx={box} value={member?.insured ?? ''} slotProps={{ input: { readOnly: true } }} /></L>
+            <L label="Plan" w={110}><TextField size="small" sx={box} value={member ? `${member.plan ?? ''} (${member.health ?? ''})` : ''} slotProps={{ input: { readOnly: true } }} /></L>
+          </Box>
+        </Box>
+        <Table size="small">
+          <TableHead><TableRow>{['Cover ID', 'Name', 'IC / BC / Passport', 'Relation', 'DOB'].map((h) => <TableCell key={h}>{h}</TableCell>)}</TableRow></TableHead>
+          <TableBody>
+            {(member?.patients ?? []).map((p) => (
+              <TableRow key={p.coverId} hover selected={p.coverId === f.patientId} sx={{ cursor: 'pointer' }} onClick={() => setF((x) => ({ ...x, patientId: p.coverId }))}>
+                <TableCell>{p.coverId}</TableCell><TableCell>{p.name}</TableCell><TableCell>{p.icBcPp}</TableCell><TableCell>{p.relation}</TableCell><TableCell>{toDmy(p.birthDate ?? '')}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Box>
+    ),
+    details: () => (
+      <Box sx={{ display: 'grid', gap: 1 }}>
+        <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', lg: '1.15fr 1fr' } }}>
+          <Box>
+            <L label="Patient">{S('patientId', (member?.patients ?? []).map((p) => [p.coverId, `${p.coverId} - ${p.name}`]))}</L>
+            <L label="Hospital">
+              <Autocomplete size="small" fullWidth options={hospitalOptions} getOptionLabel={(o) => `${o.code} - ${o.name}`} filterOptions={(x) => x} isOptionEqualToValue={(a, b) => a.code === b.code} value={hospitalOptions.find((h) => h.code === f.hospitalCode) ?? (f.hospitalCode ? { code: f.hospitalCode, name: f.hospitalCode } : null)}
+                onInputChange={(_, v, reason) => { if (reason === 'input') setHospitalSearch(v) }} onChange={(_, v) => setF((x) => ({ ...x, hospitalCode: v?.code ?? '' }))} renderInput={(p) => <TextField {...p} sx={box} required />} />
+            </L>
+            <L label="Hospital Name">{T('hospitalName', { slotProps: { htmlInput: { maxLength: 100 } } })}</L>
+            <L label="Reasons" sx={{ alignItems: 'flex-start' }}>{T('reason', { multiline: true, minRows: 3, slotProps: { htmlInput: { maxLength: 500 } } })}</L>
+            <L label="Ref By">{T('referredBy')}</L>
+            <L label="Nat of Clm">{S('nature', opt(options.data?.natures), 200, true)}<Typography sx={{ fontSize: 13, width: 75, ml: 1 }}>Stay Type</Typography>{S('stayType', opt(options.data?.stayTypes), 200)}</L>
+            <L label="Treat. Mode">{S('modality', opt(options.data?.modalities), 200, true)}<Typography sx={{ fontSize: 13, width: 75, ml: 1 }}>Cash Type</Typography>{S('payType', opt(options.data?.payTypes), 200)}</L>
+            <L label="ESP Ref. No">{T('esp', { sx: { ...box, width: 200 }, required: f.payType === 'R', slotProps: { htmlInput: { maxLength: 20 } } })}</L>
+          </Box>
+          <Box>
+            <L label="IC Num" w={90}><TextField size="small" fullWidth sx={box} value={patient?.icBcPp ?? ''} slotProps={{ input: { readOnly: true } }} /></L>
+            <L label="1st. Call" w={90}>{D('firstCall')}<Typography sx={{ fontSize: 13, width: 70, ml: 1 }}>D.O.A</Typography>{D('dateAdmitted')}</L>
+            <L label="1st. Treated" w={90}>{D('firstTreated')}<Typography sx={{ fontSize: 13, width: 70, ml: 1 }}>D.O.D</Typography>{D('dateDischarge')}</L>
+            <L label="Rsvr Amt" w={90}>{T('reserve', { type: 'number', required: true, sx: { ...box, width: 130 } })}<Typography sx={{ fontSize: 13, width: 70, ml: 1 }}>LG Amt</Typography>{T('lg', { type: 'number', required: true, sx: { ...box, width: 130 } })}</L>
+            <L label="Rcur" w={90}>{S('recur', yn, 130)}<Typography sx={{ fontSize: 13, width: 70, ml: 1 }}>LG Time</Typography>{T('lgTime', { placeholder: 'hh:mm', sx: { ...box, width: 130 }, slotProps: { htmlInput: { maxLength: 5 } } })}</L>
+            <L label="Fol. Req" w={90}>{S('followReq', yn)}</L>
+            <L label="Fol. Up" w={90}>{S('followUp', yn, 130)}<Typography sx={{ fontSize: 13, width: 70, ml: 1 }}>Pending</Typography>{S('pending', yn, 130)}</L>
+            <L label="Policy Year" w={90}>{T('policyYear', { type: 'number', sx: { ...box, width: 130 } })}<Typography sx={{ fontSize: 13, width: 70, ml: 1 }}>Patient Age</Typography>
+              {T('age', { required: true, sx: { ...box, width: 55 }, slotProps: { htmlInput: { maxLength: 2 } } })}{S('ageUnit', [['W', 'W - Weeks'], ['M', 'M - Months'], ['Y', 'Y - Year']], 110)}</L>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'grid', gap: 1, gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' } }}>
+          {diagFrame('first', 'Prem. Diag', true)}
+          {diagFrame('final', 'Final Diag')}
+          {diagFrame('ud', 'Underlying Disease')}
+          <LegacyFrame title="Repudiation Resons">
+            {f.rep.map((c, i) => (
+              <Autocomplete key={i} size="small" options={options.data?.repudiation ?? []} getOptionLabel={(o) => `${o.code} - ${o.name}`} value={(options.data?.repudiation ?? []).find((o) => o.code === c) ?? null} disabled={!repudiating}
+                onChange={(_, v) => setF((x) => ({ ...x, rep: x.rep.map((r, j) => (j === i ? v?.code ?? '' : r)) }))} renderInput={(p) => <TextField {...p} sx={box} required={repudiating && i === 0} />} />
+            ))}
+            {repudiating && <>
+              <L label="Documents" w={80}>{S('document', opt(options.data?.repudiationSelections.filter((s) => s.code.startsWith('D'))))}</L>
+              <L label="Personnel" w={80}>{S('personnel', opt(options.data?.repudiationSelections.filter((s) => s.code.startsWith('P'))))}</L>
+              <L label="Attention" w={80}>{S('attention', opt(options.data?.repudiationSelections.filter((s) => s.code.startsWith('A'))))}</L>
+              <L label="Underlying" w={80}>{S('underlying', yn, 140)}</L>
+            </>}
+            {!repudiating && <Typography variant="caption" color="text.secondary">Only for a repudiated claimability (RR, NR, PR, AR, BR, ER).</Typography>}
+          </LegacyFrame>
+        </Box>
+      </Box>
+    ),
+    others: () => (
+      <Box sx={{ display: 'grid', gap: 1, gridTemplateColumns: { xs: '1fr', lg: '1.3fr 1fr' } }}>
+        <Box sx={{ display: 'grid', gap: 1, alignContent: 'start' }}>
+          {procFrame('procs', 'Surgical Procedure', 500)}
+          {procFrame('nons', 'Non-Surgical Charges', 200)}
+          {list('docs', 'Att Doc', 30)}
+        </Box>
+        <Box sx={{ display: 'grid', gap: 1, alignContent: 'start' }}>
+          <LegacyFrame>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 110px', gap: 0.5 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 600 }}>Investigation</Typography><Typography sx={{ fontSize: 13, fontWeight: 600 }}>Code</Typography>
+              {f.invs.map((p, i) => [
+                <TextField key={`d${i}`} size="small" sx={box} value={p.done} onChange={(e) => setF((x) => ({ ...x, invs: x.invs.map((v, j) => (j === i ? { ...v, done: e.target.value } : v)) }))} slotProps={{ htmlInput: { maxLength: 500 } }} />,
+                <TextField key={`c${i}`} size="small" sx={box} value={p.code} onChange={(e) => setF((x) => ({ ...x, invs: x.invs.map((v, j) => (j === i ? { ...v, code: e.target.value } : v)) }))} slotProps={{ htmlInput: { maxLength: 10 } }} />,
+              ])}
+            </Box>
+          </LegacyFrame>
+          {list('med', 'Medical Management', 500)}
+          {list('anae', 'Anaes', 30)}
+        </Box>
+      </Box>
+    ),
+    takeover: () => (
+      <Box sx={{ display: 'grid', gap: 1 }}>
+        <LegacyFrame title="Take Over Details">
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Typography sx={{ fontSize: 13 }}>T/O Ind</Typography>{S('takeOverInd', yn, 120)}
+            <Typography sx={{ fontSize: 13 }}>T/O Amt</Typography>{T('takeOverAmt', { type: 'number', sx: { ...box, width: 120 } })}
+            <Typography sx={{ fontSize: 13 }}>Int/Ext TakeOver</Typography>{S('intExt', [['I', 'I - Internal'], ['E', 'E - External']], 150, true)}
+            <Typography sx={{ fontSize: 13 }}>T/O PLN</Typography>{T('takeOverPlan', { sx: { ...box, width: 90 }, slotProps: { htmlInput: { maxLength: 4 } } })}
+            <Typography sx={{ fontSize: 13 }}>Link Case No</Typography>{T('link', { sx: { ...box, width: 150 }, slotProps: { htmlInput: { maxLength: 15 } } })}
+          </Box>
+        </LegacyFrame>
+        <LegacyFrame sx={{ maxWidth: 560 }}>
+          <L label="Red Amt" w={140}>{T('deduction', { type: 'number', sx: { ...box, width: 160 }, title: 'Reduces the available limit' })}</L>
+          <L label="Topup Lmt" w={140}>{S('topUp', yn, 160)}</L>
+          <L label="Special App" w={140}>{S('special', opt(options.data?.specialApprovals), 300, true)}</L>
+          <L label="Query Status" w={140}>{S('query', yn, 160)}</L>
+          <L label="Pymt P'ding App" w={140}>{S('payPending', yn, 160)}</L>
+          <L label="First Doc Date" w={140}>{D('firstDoc')}</L>
+          <L label="Subseq. Doc Date" w={140}>{D('subDoc')}</L>
+          <L label="Date Rec. Doc." w={140}>{D('docDate')}</L>
+        </LegacyFrame>
+      </Box>
+    ),
+    notes: () => (
+      <Box sx={{ display: 'grid', gap: 1 }}>
+        {f.remarks.map((r, i) => (
+          <TextField key={i} size="small" label={`Page ${i + 1}`} value={r} multiline minRows={2} onChange={(e) => setF((x) => ({ ...x, remarks: x.remarks.map((v, j) => (j === i ? e.target.value : v)) }))} slotProps={{ htmlInput: { maxLength: 3900 } }} />
+        ))}
+        {member && <LegacyFrame title="Member management note"><CaseManagementNote memberNumber={member.memberNumber} area={area} /></LegacyFrame>}
+      </Box>
+    ),
+    lg: () => (adjusted ? <CaseLgTab caseNumber={adjusted.no} lgAmount={f.lg ? Number(f.lg) : null} /> : null),
+    worksheet: () => (adjusted ? <CaseWorksheetTab caseNumber={adjusted.no} /> : null),
+  }
+  const isMember = (t: TabKey): t is MemberTab => [...memberTabs, ...memberTabsAfterNotes].some(([k]) => k === t)
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minWidth: 0, gap: 1.5 }}>
-      <Typography variant="h5">{adjust ? 'Case Adjustment' : 'Case Registration'}</Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: 1 }}>
+      <LegacyTitle>{adjust ? 'Case Adjustment' : 'Case Registration'}</LegacyTitle>
       {message && <Alert severity={message.severity} onClose={() => setMessage(null)}>{message.text}</Alert>}
-      {adjust && (
-        <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', gap: 1.5, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-          <TextField size="small" label="Case No" value={caseNo} onChange={(e) => setCaseNo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && caseNo.trim()) load.mutate(caseNo) }} slotProps={{ htmlInput: { maxLength: 15 } }} />
-          <Button variant="contained" disabled={!caseNo.trim() || load.isPending} onClick={() => load.mutate(caseNo)}>Show</Button>
-          <Button variant="outlined" onClick={() => setSearching(true)}>Search</Button>
-          <Button variant="outlined" disabled={!adjusted || step.isPending} onClick={() => step.mutate('previous')}>Pre</Button>
-          <Button variant="outlined" disabled={!adjusted || step.isPending} onClick={() => step.mutate('next')}>Next</Button>
-          <TextField select size="small" label="Status" value={status} onChange={(e) => setStatus(e.target.value)} sx={{ width: 140 }} disabled={!adjusted}>{[['O', 'O - Open'], ['C', 'C - Close'], ['D', 'D - Delete']].map(([c, n]) => <MenuItem key={c} value={c}>{n}</MenuItem>)}</TextField>
-          {adjusted && <Typography variant="body2" sx={{ alignSelf: 'center' }}>{member?.name} &nbsp;|&nbsp; Policy {member?.policyNo} &nbsp;|&nbsp; Plan {member?.insured}/{member?.plan} &nbsp;|&nbsp; Last updated {adjusted.by ?? '-'} {toDmy(adjusted.on ?? '')}</Typography>}
-        </Paper>
-      )}
-      {!adjust && (
-      <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', gap: 1.5, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-        <TextField size="small" label="Mem Num." value={number} onChange={(e) => setNumber(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && number.trim()) { setMessage(null); show.mutate() } }} slotProps={{ htmlInput: { maxLength: 15 } }} />
-        <Button variant="contained" disabled={!number.trim() || show.isPending} onClick={() => { setMessage(null); show.mutate() }}>Show</Button>
-        <Button variant="outlined" onClick={() => { setNumber(''); setMember(null); setF(blank); setMessage(null) }}>Clear</Button>
-        {member && <Typography variant="body2" sx={{ alignSelf: 'center' }}>{member.name} &nbsp;|&nbsp; IC {member.icBcPp} &nbsp;|&nbsp; Policy {member.policyNo} &nbsp;|&nbsp; Plan {member.insured}/{member.plan} &nbsp;|&nbsp; Status {member.status} &nbsp;|&nbsp; {toDmy(member.effectiveDate ?? '')} - {toDmy(member.expiryDate ?? '')} &nbsp;|&nbsp; Available limit {formatMoney(member.availableLimit)}{member.topUp ? ' (top-up)' : ''}</Typography>}
-      </Paper>
-      )}
-      {registered && <CaseAfterRegistration key={registered.caseNumber} caseNumber={registered.caseNumber} letters={registered.letters} lgAmount={registered.lg} lgTime={registered.lgTime} onDone={() => setRegistered(null)} />}
       {member?.planMessage && <Alert severity="info">{member.planMessage}</Alert>}
-      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 1.5, opacity: member && !blocked ? 1 : 0.5, pointerEvents: member && !blocked ? 'auto' : 'none' }}>
-        <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-          <Typography variant="subtitle2" sx={{ width: '100%' }}>General Info / Case Details</Typography>
-          {select('Patient', 'patientId', (member?.patients ?? []).map((p) => [p.coverId, `${p.coverId} - ${p.name}`]), 260, true)}
-          {select('Claimability', 'claimability', opt(options.data?.claimability), 200, true)}
-          <Autocomplete size="small" sx={{ width: 340 }} options={hospitalOptions} getOptionLabel={(o) => o.name} filterOptions={(x) => x} isOptionEqualToValue={(a, b) => a.code === b.code} value={hospitalOptions.find((h) => h.code === f.hospitalCode) ?? null}
-            onInputChange={(_, v, reason) => { if (reason === 'input') setHospitalSearch(v) }} onChange={(_, v) => setF((x) => ({ ...x, hospitalCode: v?.code ?? '' }))} renderInput={(p) => <TextField {...p} label="Hospital" required />} />
-          {text('Hospital / clinic name (for generic rows)', 'hospitalName', { sx: { width: 280 }, slotProps: { htmlInput: { maxLength: 100 } } })}
-          <DateField label="Date Admitted" required value={f.dateAdmitted} onChange={(iso) => setF((x) => ({ ...x, dateAdmitted: iso }))} />
-          <DateField label="Date Discharge" value={f.dateDischarge} onChange={(iso) => setF((x) => ({ ...x, dateDischarge: iso }))} />
-          {text('Reserve Amount', 'reserve', { type: 'number', required: true, sx: { width: 150 } })}
-          {text('LG Amount', 'lg', { type: 'number', required: true, sx: { width: 140 } })}
-          {text('LG Time (hh:mm)', 'lgTime', { sx: { width: 130 }, slotProps: { htmlInput: { maxLength: 5 } } })}
-          {select('Pay Type', 'payType', opt(options.data?.payTypes), 170, true)}
-          {select('Stay Type', 'stayType', opt(options.data?.stayTypes), 170)}
-          {select('Modality', 'modality', [['', '(none)'], ...opt(options.data?.modalities)], 200)}
-          {select('Nature', 'nature', [['', '(none)'], ...opt(options.data?.natures)], 200)}
-          {select('Special Approval', 'special', [['', '(none)'], ...opt(options.data?.specialApprovals)], 220)}
-          {select('Pending', 'pending', yn as [string, string][], 110)}
-          {select('Top-up Limit', 'topUp', yn as [string, string][], 130, true)}
-          {select('Query', 'query', yn as [string, string][], 110)}
-          {text('Link Case No', 'link', { sx: { width: 150 }, slotProps: { htmlInput: { maxLength: 15 } } })}
-          {text('Referred By', 'referredBy', { sx: { width: 200 } })}
-          <DateField label="Date Doc Received" value={f.docDate} onChange={(iso) => setF((x) => ({ ...x, docDate: iso }))} />
-          {text('Policy Year', 'policyYear', { type: 'number', sx: { width: 120 } })}
-          {f.payType === 'R' && text('ESP Ref. No', 'esp', { required: true, sx: { width: 170 }, slotProps: { htmlInput: { maxLength: 20 } } })}
-          {text('Patient Age', 'age', { required: true, sx: { width: 110 }, slotProps: { htmlInput: { maxLength: 2 } } })}
-          {select('Week/Month/Year', 'ageUnit', [['W', 'W - Weeks'], ['M', 'M - Months'], ['Y', 'Y - Year']], 160, true)}
-          <DateField label="First Call" value={f.firstCall} onChange={(iso) => setF((x) => ({ ...x, firstCall: iso }))} />
-          <DateField label="First Treated" value={f.firstTreated} onChange={(iso) => setF((x) => ({ ...x, firstTreated: iso }))} />
-          <TextField size="small" label="Admission Reason" value={f.reason} onChange={set('reason')} multiline minRows={2} sx={{ width: '100%' }} slotProps={{ htmlInput: { maxLength: 500 } }} />
-        </Paper>
-        <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-          <Typography variant="subtitle2" sx={{ width: '100%' }}>Take Over / Others</Typography>
-          {select('Take Over', 'takeOverInd', yn as [string, string][], 130)}
-          {select('Int/Ext Take Over', 'intExt', [['', '(none)'], ['I', 'I - Internal'], ['E', 'E - External']], 170)}
-          {text('Take Over Amount', 'takeOverAmt', { type: 'number', sx: { width: 160 } })}
-          {text('Take Over Plan', 'takeOverPlan', { sx: { width: 140 }, slotProps: { htmlInput: { maxLength: 4 } } })}
-          {select('Pay Pending', 'payPending', yn as [string, string][], 130)}
-          {select('Follow Up', 'followUp', yn as [string, string][], 120)}
-          {select('Condition will recur', 'recur', yn as [string, string][], 170)}
-          {select('Follow-up required', 'followReq', yn as [string, string][], 170)}
-          {text('Deduction Amount (reduces available limit)', 'deduction', { type: 'number', sx: { width: 300 } })}
-        </Paper>
-        {repudiating && (
-          <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-            <Typography variant="subtitle2" sx={{ width: '100%' }}>Repudiation</Typography>
-            {f.rep.map((c, i) => (
-              <Autocomplete key={i} size="small" sx={{ width: 380 }} options={options.data?.repudiation ?? []} getOptionLabel={(o) => `${o.code} - ${o.name}`} value={(options.data?.repudiation ?? []).find((o) => o.code === c) ?? null}
-                onChange={(_, v) => setF((x) => ({ ...x, rep: x.rep.map((r, j) => (j === i ? v?.code ?? '' : r)) }))} renderInput={(p) => <TextField {...p} label={`Repudiate Code ${i + 1}`} required={i === 0} />} />
-            ))}
-            {select('Documents', 'document', opt(options.data?.repudiationSelections.filter((s) => s.code.startsWith('D'))), 340, true)}
-            {select('Personnel', 'personnel', opt(options.data?.repudiationSelections.filter((s) => s.code.startsWith('P'))), 260, true)}
-            {select('Attention', 'attention', opt(options.data?.repudiationSelections.filter((s) => s.code.startsWith('A'))), 420, true)}
-            {select('Underlying', 'underlying', [['N', 'N - No'], ['Y', 'Y - Yes']], 140)}
-          </Paper>
-        )}
-        {(['first', 'final', 'ud'] as const).map((which) => (
-          <Paper key={which} variant="outlined" sx={{ p: 1.5, display: 'grid', gap: 1 }}>
-            <Typography variant="subtitle2">{which === 'first' ? 'Preliminary diagnosis (ICD)' : which === 'final' ? 'Final diagnosis (ICD)' : 'Underlying illness (ICD)'}</Typography>
-            {f[which].map((d, i) => (
-              <Box key={i} sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-                <Autocomplete size="small" sx={{ width: 420 }} options={options.data?.icd ?? []} getOptionLabel={(o) => `${o.code} - ${o.name}`} value={(options.data?.icd ?? []).find((o) => o.code === d.code) ?? null}
-                  onChange={(_, v) => setDiag(which, i, { code: v?.code ?? '' })} renderInput={(p) => <TextField {...p} label={`ICD ${i + 1}`} required={which === 'first' && i === 0 && f.payType === 'C'} />} />
-                <TextField size="small" label="Description" value={d.text} onChange={(e) => setDiag(which, i, { text: e.target.value })} sx={{ flex: 1, minWidth: 220 }} slotProps={{ htmlInput: { maxLength: 150 } }} />
-                <DateField label="DOS" value={d.date} onChange={(iso) => setDiag(which, i, { date: iso })} />
-              </Box>
-            ))}
-          </Paper>
-        ))}
-        <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-          <Typography variant="subtitle2" sx={{ width: '100%' }}>Doctors</Typography>
-          {f.docs.map((d, i) => <TextField key={i} size="small" label={`Attending doctor ${i + 1}`} value={d} sx={{ width: 240 }} onChange={(e) => setF((x) => ({ ...x, docs: x.docs.map((v, j) => (j === i ? e.target.value : v)) }))} slotProps={{ htmlInput: { maxLength: i === 0 ? 100 : 30 } }} />)}
-          {f.anae.map((d, i) => <TextField key={i} size="small" label={`Anaesthetist ${i + 1}`} value={d} sx={{ width: 240 }} onChange={(e) => setF((x) => ({ ...x, anae: x.anae.map((v, j) => (j === i ? e.target.value : v)) }))} slotProps={{ htmlInput: { maxLength: 30 } }} />)}
-          <DateField label="First doctor date" value={f.firstDoc} onChange={(iso) => setF((x) => ({ ...x, firstDoc: iso }))} />
-          <DateField label="Subsequent doctor date" value={f.subDoc} onChange={(iso) => setF((x) => ({ ...x, subDoc: iso }))} />
-        </Paper>
-        {([['procs', 'Surgical procedures', 500], ['nons', 'Non-surgical procedures', 200]] as const).map(([key, title, max]) => (
-          <Paper key={key} variant="outlined" sx={{ p: 1.5, display: 'grid', gap: 1 }}>
-            <Typography variant="subtitle2">{title} (procedure and CPT code)</Typography>
-            {f[key].map((p, i) => (
-              <Box key={i} sx={{ display: 'flex', gap: 1.5 }}>
-                <TextField size="small" label={`Procedure ${i + 1}`} value={p.text} sx={{ flex: 1 }} onChange={(e) => setF((x) => ({ ...x, [key]: x[key].map((v, j) => (j === i ? { ...v, text: e.target.value } : v)) }))} slotProps={{ htmlInput: { maxLength: max } }} />
-                <TextField size="small" label="CPT" value={p.cpt} sx={{ width: 110 }} onChange={(e) => setF((x) => ({ ...x, [key]: x[key].map((v, j) => (j === i ? { ...v, cpt: e.target.value } : v)) }))} slotProps={{ htmlInput: { maxLength: 6 } }} />
-              </Box>
-            ))}
-          </Paper>
-        ))}
-        <Paper variant="outlined" sx={{ p: 1.5, display: 'grid', gap: 1 }}>
-          <Typography variant="subtitle2">Investigations and medical management</Typography>
-          {f.invs.map((p, i) => (
-            <Box key={i} sx={{ display: 'flex', gap: 1.5 }}>
-              <TextField size="small" label={`Investigation ${i + 1}`} value={p.done} sx={{ flex: 1 }} onChange={(e) => setF((x) => ({ ...x, invs: x.invs.map((v, j) => (j === i ? { ...v, done: e.target.value } : v)) }))} slotProps={{ htmlInput: { maxLength: 500 } }} />
-              <TextField size="small" label="Code" value={p.code} sx={{ width: 120 }} onChange={(e) => setF((x) => ({ ...x, invs: x.invs.map((v, j) => (j === i ? { ...v, code: e.target.value } : v)) }))} slotProps={{ htmlInput: { maxLength: 10 } }} />
-            </Box>
-          ))}
-          {f.med.map((m, i) => <TextField key={i} size="small" label={`Medical management ${i + 1}`} value={m} onChange={(e) => setF((x) => ({ ...x, med: x.med.map((v, j) => (j === i ? e.target.value : v)) }))} slotProps={{ htmlInput: { maxLength: 500 } }} />)}
-        </Paper>
-        {member && <CaseRegistrationTabs memberNumber={member.memberNumber} area={adjust ? 'adjustment' : 'registration'} caseNumber={adjust ? adjusted?.no : undefined} lgAmount={adjust && f.lg ? Number(f.lg) : null} />}
-        <Paper variant="outlined" sx={{ p: 1.5, display: 'grid', gap: 1 }}>
-          <Typography variant="subtitle2">Remarks</Typography>
-          {f.remarks.map((r, i) => <TextField key={i} size="small" label={`Remark ${i + 1}`} value={r} multiline minRows={1} onChange={(e) => setF((x) => ({ ...x, remarks: x.remarks.map((v, j) => (j === i ? e.target.value : v)) }))} slotProps={{ htmlInput: { maxLength: 3900 } }} />)}
-        </Paper>
-      </Box>
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-        <Typography variant="body2" sx={{ flexGrow: 1 }}>* - Mandatory Fields. </Typography>
-        <Button variant="contained" disabled={!member || blocked || register.isPending || update.isPending || (adjust && !adjusted)} onClick={() => { setMessage(null); setConfirming(true) }}>{adjust ? 'Update' : 'Register'}</Button>
-      </Box>
-      {adjust && <CaseSearchDialog open={searching} onClose={() => setSearching(false)} onPick={(no) => { setSearching(false); load.mutate(no) }} />}
+      {registered && <CaseAfterRegistration key={registered.caseNumber} caseNumber={registered.caseNumber} letters={registered.letters} lgAmount={registered.lg} lgTime={registered.lgTime} onDone={() => setRegistered(null)} />}
+
+      <Paper variant="outlined" sx={{ p: 1, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+        {adjust ? <>
+          <Typography sx={{ fontSize: 13 }}>Case Num</Typography>
+          <TextField size="small" sx={{ ...box, width: 150 }} value={caseNo} onChange={(e) => setCaseNo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && caseNo.trim()) load.mutate(caseNo) }} slotProps={{ htmlInput: { maxLength: 15 } }} />
+          <Button size="small" variant="outlined" disabled={!caseNo.trim() || load.isPending} onClick={() => load.mutate(caseNo)}>Go</Button>
+          <Button size="small" variant="outlined" onClick={() => setSearching(true)}>Search</Button>
+          <Button size="small" variant="outlined" disabled={!adjusted || step.isPending} onClick={() => step.mutate('previous')}>Pre</Button>
+          <Button size="small" variant="outlined" disabled={!adjusted || step.isPending} onClick={() => step.mutate('next')}>Next</Button>
+        </> : <>
+          <Typography sx={{ fontSize: 13 }}>MBM Num</Typography>
+          <TextField size="small" sx={{ ...box, width: 180 }} value={number} onChange={(e) => setNumber(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && number.trim()) { setMessage(null); show.mutate(number) } }} slotProps={{ htmlInput: { maxLength: 15 } }} />
+          <Button size="small" variant="outlined" disabled={!number.trim() || show.isPending} onClick={() => { setMessage(null); show.mutate(number) }}>Go</Button>
+          <Button size="small" variant="outlined" onClick={() => setSearching(true)}>Search</Button>
+        </>}
+        <Typography sx={{ fontSize: 13, ml: 1 }}>Cas Status</Typography>
+        <TextField select size="small" sx={{ ...box, width: 120 }} value={status} disabled={!adjust || !adjusted} onChange={(e) => setStatus(e.target.value)}>
+          {[['O', 'O - Open'], ['C', 'C - Close'], ['D', 'D - Delete']].map(([c, n]) => <MenuItem key={c} value={c}>{n}</MenuItem>)}
+        </TextField>
+        <Typography sx={{ fontSize: 13, ml: 1 }}>Claimability</Typography>
+        {S('claimability', opt(options.data?.claimability), 230)}
+        <Typography sx={{ fontSize: 13, ml: 1 }}>Pending</Typography>
+        {S('pending', yn, 100)}
+      </Paper>
+
+      <Paper variant="outlined" sx={{ p: 1, display: 'grid', gap: 1, gridTemplateColumns: { xs: '1fr', lg: '1.6fr 1fr 1fr' } }}>
+        <Box>
+          <L label="Name" w={60}><TextField size="small" fullWidth sx={box} value={member?.name ?? ''} slotProps={{ input: { readOnly: true } }} /></L>
+          <L label="Payor" w={60}><TextField size="small" sx={{ ...box, width: 90 }} value={member?.payor ?? ''} slotProps={{ input: { readOnly: true } }} /><Typography sx={{ fontSize: 13 }}>IC Num</Typography><TextField size="small" fullWidth sx={box} value={member?.icBcPp ?? ''} slotProps={{ input: { readOnly: true } }} /></L>
+        </Box>
+        <Box>
+          <L label="Renewal" w={70}><TextField size="small" sx={{ ...box, width: 60 }} value={member?.renewal ?? ''} slotProps={{ input: { readOnly: true } }} /><Typography sx={{ fontSize: 13 }}>T/Over</Typography><TextField size="small" sx={{ ...box, width: 60 }} value={member?.takeOver ?? ''} slotProps={{ input: { readOnly: true } }} /></L>
+          <L label="Pol Status" w={70}><TextField size="small" fullWidth sx={yellow} value={member?.status ?? ''} slotProps={{ input: { readOnly: true } }} /></L>
+        </Box>
+        <Box>
+          <L label="Eff Date" w={70}><TextField size="small" sx={box} value={toDmy(member?.effectiveDate ?? '')} slotProps={{ input: { readOnly: true } }} /></L>
+          <L label="Exp Date" w={70}><TextField size="small" sx={box} value={toDmy(member?.expiryDate ?? '')} slotProps={{ input: { readOnly: true } }} error={expired} />{expired && <Typography color="error" sx={{ fontSize: 13 }}>Expired</Typography>}</L>
+        </Box>
+      </Paper>
+
+      <Paper variant="outlined" sx={{ opacity: member && !blocked ? 1 : 0.55, pointerEvents: member && !blocked ? 'auto' : 'none' }}>
+        <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ borderBottom: 1, borderColor: 'divider', minHeight: 34, '& .MuiTab-root': { minHeight: 34, textTransform: 'none', px: 1.25 } }}>
+          {tabList.map(([k, l]) => <Tab key={k} value={k} label={l} />)}
+        </Tabs>
+        <Box sx={{ p: 1 }}>
+          {member ? (isMember(tab) ? <CaseMemberTab memberNumber={member.memberNumber} area={area} tab={tab} /> : panel[tab]?.()) : <Typography color="text.secondary">{adjust ? 'Show a case first.' : 'Enter the member number and click Go.'}</Typography>}
+        </Box>
+      </Paper>
+
+      <Paper variant="outlined" sx={{ p: 1, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+        <Button size="small" variant="outlined" disabled={!savedCase} title={savedCase ? '' : 'Register the case first'} onClick={() => setLgOpen(true)}>LG</Button>
+        <Button size="small" variant="outlined" disabled={!savedCase} title={savedCase ? '' : 'Register the case first'} onClick={notification}>Notification</Button>
+        <Button size="small" variant="outlined" disabled={!member} onClick={() => draft('take-home-drugs')}>T.Home Drugs</Button>
+        <Button size="small" variant="outlined" disabled={!member} onClick={() => draft('doc-request-admission')}>Doc Req Adm</Button>
+        <Button size="small" variant="outlined" disabled={!member} onClick={() => draft('doc-request-discharge')}>Doc Req Discharge</Button>
+        <Typography sx={{ fontSize: 13, ml: 2 }}>Case Number</Typography>
+        <TextField size="small" sx={{ ...yellow, width: 150 }} value={savedCase ?? ''} slotProps={{ input: { readOnly: true } }} />
+        {adjusted && <Typography variant="body2" color="text.secondary">Last updated {adjusted.by ?? '-'} {toDmy(adjusted.on ?? '')}</Typography>}
+        <Box sx={{ flex: 1 }} />
+        <Button size="small" variant="contained" disabled={!member || blocked || register.isPending || update.isPending || (adjust && !adjusted) || (!adjust && !!registered)} onClick={() => { setMessage(null); setConfirming(true) }}>{adjust ? 'Update' : 'Register'}</Button>
+        <Button size="small" variant="outlined" onClick={clear}>Clear</Button>
+        <Button size="small" variant="outlined" onClick={() => navigate('/')}>Exit</Button>
+      </Paper>
+      <Typography variant="caption" color="text.secondary">* - Mandatory Fields.</Typography>
+
+      <CaseSearchDialog open={searching} onClose={() => setSearching(false)} onPick={(no, item) => { setSearching(false); if (adjust) load.mutate(no); else { setNumber(item.memberNumber); show.mutate(item.memberNumber) } }} />
+      <Dialog open={lgOpen} onClose={() => setLgOpen(false)} maxWidth="lg" fullWidth>
+        <DialogTitle>Guarantee letters {savedCase}</DialogTitle>
+        <DialogContent>{savedCase && <CaseLgTab caseNumber={savedCase} lgAmount={f.lg ? Number(f.lg) : null} />}</DialogContent>
+        <DialogActions><Button onClick={() => setLgOpen(false)}>Close</Button></DialogActions>
+      </Dialog>
       <Dialog open={confirming} onClose={() => setConfirming(false)}><DialogTitle>{adjust ? 'Update case' : 'Register case'}</DialogTitle><DialogContent><DialogContentText>Are you sure?</DialogContentText></DialogContent>
         <DialogActions><Button onClick={() => setConfirming(false)}>No</Button><Button variant="contained" disabled={register.isPending || update.isPending} onClick={() => (adjust ? update.mutate(ack) : register.mutate(ack))}>Yes</Button></DialogActions></Dialog>
       <Dialog open={!!prompt} onClose={() => setPrompt(null)}><DialogTitle>Please confirm</DialogTitle><DialogContent><DialogContentText>{prompt?.text}</DialogContentText></DialogContent>
@@ -252,10 +408,3 @@ export function CaseRegistrationPage({ mode = 'register' }: { mode?: 'register' 
     </Box>
   )
 }
-
-
-
-
-
-
-

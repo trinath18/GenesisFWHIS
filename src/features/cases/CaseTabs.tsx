@@ -15,7 +15,6 @@ import type { LifetimeLimitRow, NonDisclosureItem, PolicyTerm } from '../../api/
 import { download } from '../../lib/download'
 import { formatDate, formatMoney } from '../../lib/format'
 import { Field, FieldGrid, QueryTable, RowsTable, type Column } from '../../components/DataTables'
-import { claimabilityLabels, statusLabels, withLabel, yesNo } from './labels'
 
 const list = (items: (string | null | undefined)[]) => items.filter(Boolean).join(', ')
 
@@ -26,161 +25,6 @@ function Remark({ title, text }: { title: string; text: string | null }) {
       <Typography variant="subtitle2">{title}</Typography>
       <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{text}</Typography>
     </Box>
-  )
-}
-
-export function CaseDetailsTab({ d }: { d: CaseDetail }) {
-  const h = d.header
-  const m = d.member
-  const repudiation = useQuery({ queryKey: ['case', h.caseNumber, 'repudiation'], queryFn: () => casesApi.repudiation(h.caseNumber) })
-  return (
-    <Box sx={{ display: 'grid', gap: 3 }}>
-      <FieldGrid>
-        <Field label="Member No" value={h.memberNumber} />
-        <Field label="Patient" value={`${h.coverId ?? ''} - ${h.patientName ?? ''}`} />
-        <Field label="Status" value={withLabel(h.status, statusLabels)} />
-        <Field label="Claimability" value={withLabel(h.claimability, claimabilityLabels)} />
-        <Field label="Pending" value={withLabel(h.pending, yesNo)} />
-        <Field label="Registered" value={formatDate(h.registered)} />
-        <Field label="Admitted" value={formatDate(h.admitted)} />
-        <Field label="Discharged" value={formatDate(h.discharged)} />
-        <Field label="Hospital" value={h.hospitalName} />
-        <Field label="Stay Type" value={h.stayType} />
-        <Field label="Pay Type" value={h.payType} />
-        <Field label="Modality" value={h.modality} />
-        <Field label="Claim Nature" value={h.claimNature} />
-        <Field label="Referred By" value={h.referredBy} />
-        <Field label="LG Amount" value={formatMoney(h.lgAmount)} />
-        <Field label="LG Time" value={h.lgTime} />
-        <Field label="Reserve Amount" value={formatMoney(h.reserveAmount)} />
-        <Field label="Query" value={h.query} />
-        <Field label="Link Case No" value={h.linkCaseNumber} />
-        <Field label="Top-up Limit" value={h.topupLimit} />
-        <Field label="Case Indicator" value={h.caseIndicator} />
-        <Field label="ESP Ref No" value={h.espRefNo} />
-        <Field label="Claim ID" value={h.claimId} />
-        <Field label="Policy Year" value={h.policyYear} />
-        <Field label="Room & Board Days" value={h.roomBoardDays} />
-      </FieldGrid>
-      <Field label="Admission Reason" value={h.admissionReason} />
-      <Typography variant="subtitle2">Member and policy</Typography>
-      <FieldGrid>
-        <Field label="Policy No" value={m.policyNo} />
-        <Field label="Member" value={m.name} />
-        <Field label="IC / BC / Passport" value={m.icBcPp} />
-        <Field label="Date of Birth" value={formatDate(m.dateOfBirth)} />
-        <Field label="Payor" value={m.payorCode} />
-        <Field label="Insurer" value={m.insurerCode} />
-        <Field label="Plan" value={m.planCode} />
-        <Field label="Product" value={m.productName} />
-        <Field label="Health Code" value={m.healthCode} />
-        <Field label="Member Status" value={m.status} />
-        <Field label="Expired" value={m.expiredStatus} />
-        <Field label="Available Limit" value={formatMoney(m.availableLimit)} />
-        <Field label="Payor Effective" value={formatDate(m.payorEffDate)} />
-        <Field label="Payor Expiry" value={formatDate(m.payorExpDate)} />
-        <Field label="Group Company" value={m.groupCompany} />
-        <Field label="Address" value={m.address} />
-      </FieldGrid>
-      <Typography variant="subtitle2">Diagnosis</Typography>
-      <RowsTable
-        rows={[...d.firstDiagnoses.map((x) => ({ ...x, kind: 'Preliminary' })), ...d.finalDiagnoses.map((x) => ({ ...x, kind: 'Final' }))]}
-        empty="No diagnosis recorded."
-        columns={[
-          { header: 'Type', cell: (x) => x.kind },
-          { header: 'ICD', cell: (x) => x.icdCode },
-          { header: 'Description', cell: (x) => x.description },
-          { header: 'Date of Service', cell: (x) => formatDate(x.dateOfService) },
-        ]}
-      />
-      {d.underlying.length > 0 && (
-        <>
-          <Typography variant="subtitle2">Underlying declaration</Typography>
-          <RowsTable
-            rows={d.underlying}
-            columns={[{ header: 'Code', cell: (x) => x.code }, { header: 'Reason', cell: (x) => x.reason }, { header: 'Date of Service', cell: (x) => formatDate(x.dateOfService) }]}
-          />
-        </>
-      )}
-      {repudiation.data && (
-        <>
-          <Typography variant="subtitle2">Repudiation</Typography>
-          <FieldGrid>
-            <Field label="Issued By" value={repudiation.data.issuedBy} />
-            <Field label="Date" value={formatDate(repudiation.data.date)} />
-            <Field label="Document" value={repudiation.data.document} />
-            <Field label="Personnel" value={repudiation.data.personnel} />
-            <Field label="Attention" value={repudiation.data.attention} />
-          </FieldGrid>
-          <RowsTable
-            rows={repudiation.data.reasons}
-            empty="No repudiation reasons."
-            columns={[{ header: 'Code', cell: (r) => r.code }, { header: 'Description', cell: (r) => r.description }, { header: 'Reason', cell: (r) => r.reason }]}
-          />
-        </>
-      )}
-    </Box>
-  )
-}
-
-export function CaseOthersTab({ d }: { d: CaseDetail }) {
-  const c = d.clinical
-  return (
-    <Box sx={{ display: 'grid', gap: 3 }}>
-      <RowsTable
-        rows={c.procedures}
-        empty="No procedures recorded."
-        columns={[
-          { header: 'Type', cell: (p) => (p.nonSurgical ? 'Non-surgical' : 'Surgical') },
-          { header: 'Procedure', cell: (p) => p.procedure },
-          { header: 'CPT', cell: (p) => p.cptCode },
-          { header: 'Surgeon Fees', align: 'right', cell: (p) => formatMoney(p.surgeonFees) },
-          { header: 'Anaesthetist Fees', align: 'right', cell: (p) => formatMoney(p.anaesthetistFees) },
-          { header: 'Non-surgical Fees', align: 'right', cell: (p) => formatMoney(p.nonSurgicalFees) },
-        ]}
-      />
-      <FieldGrid>
-        <Field label="Investigations Done" value={list(c.investigationsDone)} />
-        <Field label="Medical / Surgical Management" value={list(c.medicalSurgicalManagement)} />
-        <Field label="Medication on Discharge" value={list(c.medicationOnDischarge)} />
-        <Field label="Investigation Codes" value={list(c.investigationCodes)} />
-        <Field label="Condition Will Recur" value={withLabel(c.conditionWillRecur, yesNo)} />
-        <Field label="Follow-up Required" value={withLabel(c.followUpRequired, yesNo)} />
-        <Field label="Follow-up" value={c.followUp} />
-        <Field label="First Call" value={c.firstCall} />
-        <Field label="First Treated" value={c.firstTreated} />
-        <Field label="Reduction Amount" value={formatMoney(c.reductionAmount)} />
-        <Field label="Pay Pending" value={withLabel(c.payPending, yesNo)} />
-        <Field label="Patient Age" value={[c.patientAge, c.patientAgeUnit].filter(Boolean).join(' ')} />
-        <Field label="Attending Doctors" value={list(c.attendingDoctors)} />
-        <Field label="Anaesthetists" value={list(c.anaesthetists)} />
-        <Field label="First Doctor Date" value={formatDate(c.firstDoctorDate)} />
-        <Field label="Subsequent Doctor Date" value={formatDate(c.subsequentDoctorDate)} />
-      </FieldGrid>
-      {d.complaint && (
-        <>
-          <Typography variant="subtitle2">Complaint</Typography>
-          <FieldGrid>
-            <Field label="Date" value={formatDate(d.complaint.date)} />
-            <Field label="Issue" value={d.complaint.issue} />
-            <Field label="Complainant" value={d.complaint.complainant} />
-            <Field label="Action" value={d.complaint.action} />
-          </FieldGrid>
-        </>
-      )}
-    </Box>
-  )
-}
-
-export function TakeOverTab({ d }: { d: CaseDetail }) {
-  const h = d.header
-  return (
-    <FieldGrid>
-      <Field label="Take Over Indicator" value={h.takeOverIndicator} />
-      <Field label="Take Over Amount" value={formatMoney(h.takeOverAmount)} />
-      <Field label="Take Over Plan" value={h.takeOverPlan} />
-      <Field label="Internal / External Take Over" value={h.internalExternalTakeOver} />
-    </FieldGrid>
   )
 }
 
@@ -454,6 +298,11 @@ export function FormsTab({ number }: { number: string }) {
       <AreaDocuments number={number} area="Internal" title="Internal documents" empty="No internal documents." />
     </Box>
   )
+}
+
+/** The case's scanned documents (the Documents tab of the legacy Invoice Processing form). */
+export function ScannedDocumentsTab({ number }: { number: string }) {
+  return <AreaDocuments number={number} area="Scanned" title="Scanned documents" empty="No scanned documents." />
 }
 
 export function EmailsTab({ number }: { number: string }) {

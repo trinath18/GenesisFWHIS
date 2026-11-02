@@ -75,6 +75,14 @@ export interface MemberDetail {
   reinstated: boolean
   topUp: boolean
   refund: MemberRefund | null
+  /** Prin Detail extras and the legacy "Others Details" window. */
+  others: MemberOthers | null
+}
+
+export interface MemberOthers {
+  salutation: string | null; nationality: string | null; maritalStatus: string | null; agentCode: string | null; employeeNo: string | null; guaranteedRenewal: string | null
+  branch: string | null; topUpJoinDate: string | null; hospitalClinic: string | null; phoneHome: string | null; phoneMobile: string | null; phoneOffice: string | null
+  email: string | null; sendingMode: string | null; cardDate: string | null; cancelDate: string | null; occupation: string | null; department: string | null
 }
 
 export interface MemberAmendment {
@@ -263,6 +271,9 @@ const base = (n: string) => `/api/membership/members/${encodeURIComponent(n)}`
 export const membershipApi = {
   search: (q: string) => api.get<MemberSearchPage>(`/api/membership/members?q=${encodeURIComponent(q.trim())}`),
   get: (n: string) => api.get<MemberDetail>(base(n)),
+  /** Legacy Pre / Next: the neighbouring membership number. */
+  next: (n: string) => api.get<{ number: string }>(`${base(n)}/next`),
+  previous: (n: string) => api.get<{ number: string }>(`${base(n)}/previous`),
   amendments: (n: string) => api.get<MemberAmendment[]>(`${base(n)}/amendments`),
   cases: (n: string) => api.get<MemberCase[]>(`${base(n)}/cases`),
   caseHistory: (n: string) => api.get<MemberCaseHistory>(`${base(n)}/case-history`),

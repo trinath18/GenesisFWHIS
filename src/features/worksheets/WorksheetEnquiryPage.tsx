@@ -1,53 +1,49 @@
-import { Alert, Box, Button, MenuItem, Paper, TextField, Typography } from '@mui/material'
+import { Alert, MenuItem, TextField, Typography } from '@mui/material'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
-import { worksheetApi, type WorksheetEnquiry } from '../../api/worksheets'
-import { Field, FieldGrid } from '../../components/DataTables'
-import { formatDate, formatMoney } from '../../lib/format'
-import { WorksheetCaseHeader, WorksheetGrid, WorksheetInvoices } from './WorksheetGrid'
+import { worksheetApi, type WorksheetEnquiry, type WorksheetVersion } from '../../api/worksheets'
+import { formatDate } from '../../lib/format'
+import { WorksheetForm } from './WorksheetForm'
+import { parseLegacyMoney, type WorksheetModel } from './worksheetModel'
 
-/** Legacy: Worksheet > Worksheet Enquiry (frmWorksheetEnq). Every saved worksheet version of a case, read-only. */
+function versionModel(e: WorksheetEnquiry, v: WorksheetVersion): WorksheetModel {
+  const hospital = v.lines.reduce((sum, l) => sum + (parseLegacyMoney(l.hospital) ?? 0), 0)
+  return {
+    caseNumber: e.case.caseNumber, version: v.version, claimability: v.worksheetStatus, claimable: true, lines: v.lines, annualBalance: v.previousBalance,
+    invoices: v.invoices,
+    totals: {
+      totalActual: v.totalActual, totalApproved: v.totalApproved, totalHospital: hospital, excess: v.excess, limitExceeded: v.limitExceeded,
+      finalApproved: v.finalApproved ?? v.totalApproved, payableToHospital: v.payableToHospital, payableToMember: v.payableToMember,
+    },
+  }
+}
+
+/** Legacy: Worksheet > Worksheet Enquiry (frmWorksheetEnq). Every saved worksheet version of a case in the worksheet form, read-only, with its documents. */
 export function WorksheetEnquiryPage() {
   const [caseNo, setCaseNo] = useState('')
   const [data, setData] = useState<WorksheetEnquiry | null>(null)
   const [version, setVersion] = useState<number | null>(null)
   const load = useMutation({
-    mutationFn: () => worksheetApi.enquiry(caseNo),
+    mutationFn: (no: string) => worksheetApi.enquiry(no),
     onSuccess: (d) => { setData(d); setVersion(d.versions.at(-1)?.version ?? null) },
     onError: () => setData(null),
   })
   const v = data?.versions.find((x) => x.version === version)
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minWidth: 0, gap: 1.5 }}>
-      <Typography variant="h5">Worksheet Enquiry</Typography>
-      {load.isError && <Alert severity="error">{(load.error as Error).message}</Alert>}
-      <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
-        <TextField size="small" label="Case Num" value={caseNo} onChange={(e) => setCaseNo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && caseNo.trim()) load.mutate() }} slotProps={{ htmlInput: { maxLength: 20 } }} />
-        <Button variant="contained" disabled={!caseNo.trim() || load.isPending} onClick={() => load.mutate()}>Show</Button>
-        {data && data.versions.length > 0 && (
-          <TextField select size="small" label="Version" value={version ?? ''} onChange={(e) => setVersion(Number(e.target.value))} sx={{ width: 120 }}>
+    <WorksheetForm key={`${data?.case.caseNumber}-${version}`} screen="worksheet-enquiry" title="Worksheet Enquiry" caseNo={caseNo} setCaseNo={setCaseNo}
+      onGo={(no) => load.mutate((no ?? caseNo).trim())} loading={load.isPending} error={load.error} model={data && v ? versionModel(data, v) : null}
+      canSave={false} showSaved typed={{}} setTyped={() => {}} onRecalc={() => {}} savedVersion={v?.version ?? null}
+      headerExtra={data && data.versions.length > 0 && (
+        <>
+          <Typography variant="body2" sx={{ ml: 1 }}>Version</Typography>
+          <TextField select size="small" value={version ?? ''} onChange={(e) => setVersion(Number(e.target.value))} sx={{ width: 90 }}>
             {data.versions.map((x) => <MenuItem key={x.version} value={x.version}>{x.version}</MenuItem>)}
           </TextField>
-        )}
-      </Paper>
-      {data && <WorksheetCaseHeader c={data.case} />}
-      {data && data.versions.length === 0 && <Alert severity="info">This case has no worksheet yet.</Alert>}
-      {data && v && (
-        <>
-          <Paper variant="outlined" sx={{ p: 1.5 }}>
-            <FieldGrid>
-              <Field label="WS Num" value={`${data.case.caseNumber}-${v.version}`} /><Field label="Status" value={v.worksheetStatusName ? `${v.worksheetStatus} - ${v.worksheetStatusName}` : v.worksheetStatus} />
-              <Field label="Opened" value={`${formatDate(v.opened)} ${v.openedBy ?? ''}`} /><Field label="Closed" value={formatDate(v.closed)} />
-              <Field label="Total Actual" value={formatMoney(v.totalActual)} /><Field label="Total Approved" value={formatMoney(v.totalApproved)} />
-              <Field label="Payable to Hospital" value={formatMoney(v.payableToHospital)} /><Field label="Payable to Member" value={formatMoney(v.payableToMember)} />
-              <Field label="Excess" value={formatMoney(v.excess)} /><Field label="Balance Limit" value={formatMoney(v.balanceLimit)} />
-              <Field label="Bordx Ref" value={v.bordxRefNo} /><Field label="Credit/Debit Note" value={v.debitCreditRefNo ? `${v.debitCreditRefNo} ${formatDate(v.debitCreditDate)}` : null} />
-            </FieldGrid>
-          </Paper>
-          <WorksheetGrid lines={v.lines} show={['limit', 'actual', 'approved', 'hospital', 'member']} />
-          <WorksheetInvoices rows={v.invoices} empty="No invoices recorded for this version." />
         </>
       )}
-    </Box>
+      notice={<>
+        {data && data.versions.length === 0 && <Alert severity="info">This case has no worksheet yet.</Alert>}
+        {v && <Typography variant="body2" color="text.secondary">Opened {formatDate(v.opened)} by {v.openedBy ?? '-'}{v.bordxRefNo ? ` · Bordx ${v.bordxRefNo}` : ''}{v.debitCreditRefNo ? ` · Note ${v.debitCreditRefNo} ${formatDate(v.debitCreditDate)}` : ''}</Typography>}
+      </>} />
   )
 }

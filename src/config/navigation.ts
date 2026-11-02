@@ -20,6 +20,7 @@ export const navigation: NavItem[] = [
   { path: '/membership/reinstatement', label: 'Member Reinstatement', position: 1 },
   { path: '/membership/adjustment', label: 'Membership Adjustment', position: 2 },
   { path: '/membership/registration', label: 'Membership Registration', position: 1 },
+  { path: '/membership/bordx-upload', label: 'Upload Bordx', position: 8 },
   { path: '/maintenance/benefit-entry', label: 'Benefit Entry', position: 88 },
   { path: '/maintenance/benefit-listing', label: 'Benefits Listing', position: 89 },
   { path: '/maintenance/icd-selection', label: 'ICD Selection', position: 90 },

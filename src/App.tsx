@@ -17,6 +17,7 @@ import { MemberDeletionPage } from './features/membership/MemberDeletionPage'
 import { AdjustmentPage } from './features/membership/AdjustmentPage'
 import { McoPendingPage } from './features/membership/McoPendingPage'
 import { RegistrationPage } from './features/membership/RegistrationPage'
+import { BordxUploadPage } from './features/membership/BordxUploadPage'
 import { BenefitEntryPage } from './features/maintenance/BenefitEntryPage'
 import { BenefitListingPage } from './features/maintenance/BenefitListingPage'
 import { IcdSelectionPage } from './features/maintenance/IcdSelectionPage'
@@ -88,6 +89,9 @@ export default function App() {
           </Route>
           <Route element={<RequireScreen position={byPath['/membership/registration']} />}>
             <Route path="membership/registration" element={<RegistrationPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/membership/bordx-upload']} />}>
+            <Route path="membership/bordx-upload" element={<BordxUploadPage />} />
           </Route>
           <Route element={<RequireScreen position={byPath['/maintenance/benefit-entry']} />}>
             <Route path="maintenance/benefit-entry" element={<BenefitEntryPage />} />

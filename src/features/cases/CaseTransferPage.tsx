@@ -1,38 +1,48 @@
 ﻿import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Paper, TextField, Typography } from '@mui/material'
 import { useMutation } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { caseTransferApi, type CaseTransferParty } from '../../api/caseTransfers'
+import { LegacyFrame, LegacyRow as L, LegacyTitle } from '../../components/LegacyForm'
+import { legacyBox as box, legacyYellow as yellow } from '../../components/legacyStyles'
 import { toDmy } from '../../lib/dates'
 
 const statusName: Record<string, string> = { A: 'A - Active', C: 'C - Cancel', D: 'D - Delete' }
+const ro = (v: string | null | undefined, w: number | string = '100%') => <TextField size="small" sx={{ ...box, width: w }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
 
-function Party({ title, p }: { title: string; p: CaseTransferParty | null }) {
-  const row = (label: string, value: string | null | undefined) => <TextField size="small" label={label} value={value ?? ''} disabled sx={{ width: 200 }} slotProps={{ inputLabel: { shrink: true } }} />
+/**
+ * One member frame of the legacy form: Member No. (Transfer No.) and Cov ID, Policy No. and Pol Status, IC No. and Eff Date, Patient and Exp Date. The
+ * transfer frame takes the member number and cover ID; everything else is filled in from the member.
+ */
+function Party({ title, numberLabel, p, number, cover }: { title: string; numberLabel: string; p: CaseTransferParty | null; number?: ReactNode; cover?: ReactNode }) {
   return (
-    <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-      <Typography variant="subtitle2" sx={{ width: '100%' }}>{title}</Typography>
-      {row('Member No.', p?.memberNumber)}{row('Cov ID', p?.coverId)}{row('Patient', p?.name)}{row('Policy No.', p?.policyNo)}{row('IC No.', p?.icNo)}
-      {row('Pol Status', p?.status ? statusName[p.status] ?? p.status : '')}{row('Eff Date', toDmy(p?.effectiveDate ?? ''))}{row('Exp Date', toDmy(p?.expiryDate ?? ''))}
-    </Paper>
+    <LegacyFrame title={title}>
+      <L label={numberLabel} w={85}>{number ?? ro(p?.memberNumber, 170)}<Typography sx={{ fontSize: 13, width: 65, ml: 1 }}>Cov ID</Typography>{cover ?? ro(p?.coverId, 70)}</L>
+      <L label="Policy No." w={85}>{ro(p?.policyNo, 170)}<Typography sx={{ fontSize: 13, width: 65, ml: 1 }}>Pol Status</Typography>{ro(p?.status ? statusName[p.status] ?? p.status : '', 130)}</L>
+      <L label="IC No." w={85}>{ro(p?.icNo, 170)}<Typography sx={{ fontSize: 13, width: 65, ml: 1 }}>Eff Date</Typography>{ro(toDmy(p?.effectiveDate ?? ''), 130)}</L>
+      <L label="Patient" w={85}>{ro(p?.name, 170)}<Typography sx={{ fontSize: 13, width: 65, ml: 1 }}>Exp Date</Typography>{ro(toDmy(p?.expiryDate ?? ''), 130)}</L>
+    </LegacyFrame>
   )
 }
 
-/** Legacy: Case > Case Transfer (frmCaseTransferMBMNo) and Case > Temp Case Transfer (FrmTempCaseTransfer). */
+/** Legacy: Case > Case Transfer (frmCaseTransferMBMNo, "Case - Transfer of Membership") and Case > Temp Case Transfer (FrmTempCaseTransfer). */
 export function CaseTransferPage({ temporary = false }: { temporary?: boolean }) {
   const api = caseTransferApi(temporary)
+  const navigate = useNavigate()
   const [caseNo, setCaseNo] = useState('')
   const [current, setCurrent] = useState<CaseTransferParty | null>(null)
   const [loadedCase, setLoadedCase] = useState('')
   const [member, setMember] = useState('')
   const [cover, setCover] = useState('00')
   const [target, setTarget] = useState<CaseTransferParty | null>(null)
+  const [newCase, setNewCase] = useState('')
   const [message, setMessage] = useState<{ severity: 'success' | 'error' | 'warning'; text: string } | null>(null)
   const [confirming, setConfirming] = useState(false)
   const reset = () => { setCaseNo(''); setCurrent(null); setLoadedCase(''); setMember(''); setCover('00'); setTarget(null) }
 
   const go = useMutation({
     mutationFn: () => api.current(caseNo.trim()),
-    onSuccess: (p) => { setCurrent(p); setLoadedCase(caseNo.trim()); setMember(temporary ? '' : p.memberNumber); setCover(temporary ? '00' : p.coverId); setTarget(temporary ? null : p); setMessage(null) },
+    onSuccess: (p) => { setCurrent(p); setLoadedCase(caseNo.trim()); setNewCase(''); setMember(temporary ? '' : p.memberNumber); setCover(temporary ? '00' : p.coverId); setTarget(temporary ? null : p); setMessage(null) },
     onError: (e) => { setCurrent(null); setLoadedCase(''); setTarget(null); setMessage({ severity: 'error', text: (e as Error).message }) },
   })
   const lookup = useMutation({
@@ -42,31 +52,41 @@ export function CaseTransferPage({ temporary = false }: { temporary?: boolean })
   })
   const transfer = useMutation({
     mutationFn: () => api.transfer(loadedCase, member.trim(), cover.trim()),
-    onSuccess: (r) => { setConfirming(false); reset(); setMessage({ severity: 'success', text: r.message + (r.temporaryMemberRemoved ? ' The temporary membership was removed.' : '') }) },
+    onSuccess: (r) => { setConfirming(false); reset(); setNewCase(r.newCaseNumber); setMessage({ severity: 'success', text: r.message + (r.temporaryMemberRemoved ? ' The temporary membership was removed.' : '') }) },
     onError: (e) => { setConfirming(false); setMessage({ severity: 'error', text: (e as Error).message }) },
   })
   const ready = !!current && !!member.trim() && cover.trim().length === 2
+  const check = () => { if (member.trim() && cover.trim().length === 2) lookup.mutate() }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minWidth: 0, gap: 1.5 }}>
-      <Typography variant="h5">{temporary ? 'Temporary Case Transfer' : 'Case - Transfer of Membership'}</Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: 1 }}>
+      <LegacyTitle>{temporary ? 'Temporary Case Transfer' : 'Case - Transfer of Membership'}</LegacyTitle>
       {message && <Alert severity={message.severity} onClose={() => setMessage(null)}>{message.text}</Alert>}
-      <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
-        <TextField size="small" label={temporary ? 'Temp Case No.' : 'Case No.'} value={caseNo} onChange={(e) => setCaseNo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && caseNo.trim()) go.mutate() }} slotProps={{ htmlInput: { maxLength: 15 } }} />
-        <Button variant="contained" disabled={!caseNo.trim() || go.isPending} onClick={() => { setMessage(null); go.mutate() }}>Go</Button>
-        <Button variant="outlined" onClick={() => { reset(); setMessage(null) }}>Cancel</Button>
+
+      <Paper variant="outlined" sx={{ p: 1, display: 'grid', gap: 1 }}>
+        <LegacyFrame>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+            <Typography sx={{ fontSize: 13, width: 85 }}>{temporary ? 'Temp Case' : 'Case No.'}</Typography>
+            <TextField size="small" sx={{ ...box, width: 170 }} value={caseNo} onChange={(e) => setCaseNo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && caseNo.trim()) go.mutate() }} slotProps={{ htmlInput: { maxLength: 15 } }} />
+            <Button size="small" variant="outlined" disabled={!caseNo.trim() || go.isPending} onClick={() => { setMessage(null); go.mutate() }}>Go</Button>
+            {temporary && <><Typography sx={{ fontSize: 13, ml: 4 }}>Case No.</Typography>{<TextField size="small" sx={{ ...yellow, width: 170 }} value={newCase} slotProps={{ input: { readOnly: true } }} title="The new case number, after the transfer" />}</>}
+          </Box>
+        </LegacyFrame>
+        <Box sx={{ display: 'grid', gap: 1, gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' } }}>
+          <Party title={temporary ? 'Temp Member' : 'Current Member'} numberLabel="Member No." p={current} />
+          <Box sx={{ opacity: current ? 1 : 0.55, pointerEvents: current ? 'auto' : 'none' }}>
+            <Party title="Transfer Member" numberLabel="Transfer No." p={target}
+              number={<TextField size="small" sx={{ ...box, width: 170 }} value={member} onChange={(e) => { setMember(e.target.value); setTarget(null) }} onBlur={check} onKeyDown={(e) => { if (e.key === 'Enter') check() }} slotProps={{ htmlInput: { maxLength: 15 } }} />}
+              cover={<TextField size="small" sx={{ ...box, width: 70 }} value={cover} onChange={(e) => { setCover(e.target.value); setTarget(null) }} onBlur={check} onKeyDown={(e) => { if (e.key === 'Enter') check() }} slotProps={{ htmlInput: { maxLength: 2 } }} />} />
+          </Box>
+        </Box>
+        <Paper variant="outlined" sx={{ p: 1, display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+          <Button size="small" variant="contained" disabled={!ready || !target?.name || transfer.isPending} onClick={() => { setMessage(null); setConfirming(true) }}>Transfer</Button>
+          <Button size="small" variant="outlined" onClick={() => { reset(); setNewCase(''); setMessage(null) }}>Cancel</Button>
+          <Button size="small" variant="outlined" onClick={() => navigate('/')}>Exit</Button>
+        </Paper>
       </Paper>
-      <Party title={temporary ? 'Temp Member' : 'Current Member'} p={current} />
-      <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-start', opacity: current ? 1 : 0.5, pointerEvents: current ? 'auto' : 'none' }}>
-        <Typography variant="subtitle2" sx={{ width: '100%' }}>Transfer Member</Typography>
-        <TextField size="small" label="Transfer No." value={member} onChange={(e) => { setMember(e.target.value); setTarget(null) }} onBlur={() => { if (member.trim() && cover.trim().length === 2) lookup.mutate() }} slotProps={{ htmlInput: { maxLength: 15 } }} />
-        <TextField size="small" label="Cov ID" value={cover} onChange={(e) => { setCover(e.target.value); setTarget(null) }} onBlur={() => { if (member.trim() && cover.trim().length === 2) lookup.mutate() }} sx={{ width: 90 }} slotProps={{ htmlInput: { maxLength: 2 } }} />
-        <Button variant="outlined" disabled={!ready || lookup.isPending} onClick={() => lookup.mutate()}>Check</Button>
-      </Paper>
-      <Party title="Transfer Member details" p={target} />
-      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-        <Button variant="contained" disabled={!ready || !target?.name || transfer.isPending} onClick={() => { setMessage(null); setConfirming(true) }}>Transfer</Button>
-      </Box>
+
       <Dialog open={confirming} onClose={() => setConfirming(false)}>
         <DialogTitle>{temporary ? 'Transfer temporary case' : 'Transfer case'}</DialogTitle>
         <DialogContent><DialogContentText>

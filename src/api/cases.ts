@@ -299,6 +299,9 @@ export const casesApi = {
   search: (by: CaseSearchBy, q: string, plan?: string) =>
     api.get<CaseSearchPage>(`/api/cases?by=${by}&q=${encodeURIComponent(q.trim())}${plan ? `&plan=${encodeURIComponent(plan)}` : ''}`),
   get: (c: string) => api.get<CaseDetail>(base(c)),
+  /** Legacy Prev / Next: the neighbouring case number. */
+  next: (c: string) => api.get<{ caseNumber: string }>(`${base(c)}/next`),
+  previous: (c: string) => api.get<{ caseNumber: string }>(`${base(c)}/previous`),
   guarantees: (c: string) => api.get<CaseGuarantees>(`${base(c)}/guarantees`),
   worksheets: (c: string) => api.get<CaseWorksheet[]>(`${base(c)}/worksheets`),
   invoices: (c: string) => api.get<CaseInvoice[]>(`${base(c)}/invoices`),

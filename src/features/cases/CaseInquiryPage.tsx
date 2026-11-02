@@ -1,89 +1,97 @@
-import { Alert, Box, Button, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
-import { useQuery } from '@tanstack/react-query'
-import { useEffect, useState, type FormEvent } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { casesApi, type CaseSearchBy } from '../../api/cases'
-import { formatDate, formatMoney } from '../../lib/format'
+import { Alert, Box, Button, Chip, Paper, TextField, Typography } from '@mui/material'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { casesApi } from '../../api/cases'
+import { useAuth } from '../../auth/AuthContext'
+import { LegacyRow as L, LegacyTitle } from '../../components/LegacyForm'
+import { legacyBox as box, legacyYellow as yellow } from '../../components/legacyStyles'
+import { download } from '../../lib/download'
 import { CaseDetailView } from './CaseDetailView'
-import { statusLabels, withLabel } from './labels'
+import { CaseInquirySearchDialog } from './CaseInquirySearchDialog'
+import { claimabilityLabels, statusLabels, withLabel, yesNo } from './labels'
 
-const searchTypes: { value: CaseSearchBy; label: string; minLength: number }[] = [
-  { value: 'CaseNo', label: 'Case No (prefix)', minLength: 3 },
-  { value: 'MemberNo', label: 'Member No (prefix)', minLength: 3 },
-  { value: 'PolicyNo', label: 'Policy No', minLength: 1 },
-  { value: 'Name', label: 'Member name (contains)', minLength: 3 },
-  { value: 'Ic', label: 'IC / BC / Passport', minLength: 1 },
-  { value: 'EspRefNo', label: 'ESP Ref No', minLength: 1 },
-  { value: 'ClaimId', label: 'Claim ID', minLength: 1 },
-]
+/** The legacy form enables "print payments" only with USRAccess position 178. */
+const PAYMENT_PRINT_POSITION = 178
+const valid = /^[A-Za-z0-9*\-/]+$/
 
-const allowed = /^[A-Za-z0-9 .,'/\-()@*]+$/
-
+/**
+ * Legacy: Case > Case Inquiry (frmCaseInquiry). Case No with Go, Prev, Next and Search, the policy number, case status and claimability; the member with
+ * Enq, name, IC and pending; the 19 tabs; and Print Case, Print Mgmt Note and Exit. Everything is read-only.
+ */
 export function CaseInquiryPage() {
+  const { can } = useAuth()
+  const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
-  const by = (params.get('by') as CaseSearchBy | null) ?? 'CaseNo'
-  const q = params.get('q') ?? ''
   const selected = params.get('case')
-  const [type, setType] = useState<CaseSearchBy>(by)
-  const [input, setInput] = useState(q)
-  const [formError, setFormError] = useState<string | null>(null)
-  const min = searchTypes.find((s) => s.value === by)?.minLength ?? 3
-
-  const search = useQuery({ queryKey: ['case-search', by, q], queryFn: () => casesApi.search(by, q), enabled: q.length >= min })
-  const items = search.data?.items
-
-  // Same behaviour as the legacy form: a single match opens the case straight away.
-  useEffect(() => {
-    if (items?.length === 1 && selected !== items[0].caseNumber) setParams({ by, q, case: items[0].caseNumber }, { replace: true })
-  }, [items, by, q, selected, setParams])
-
-  const submit = (e: FormEvent) => {
-    e.preventDefault()
-    const value = input.trim()
-    const required = searchTypes.find((s) => s.value === type)!.minLength
-    if (value.length < required) return setFormError(`Enter at least ${required} character${required > 1 ? 's' : ''}.`)
-    if (!allowed.test(value)) return setFormError('That value contains characters that are not allowed.')
-    setFormError(null)
-    setParams({ by: type, q: value })
+  const [caseNo, setCaseNo] = useState(selected ?? '')
+  const [searching, setSearching] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+  const detail = useQuery({ queryKey: ['case', selected], queryFn: () => casesApi.get(selected!), enabled: !!selected })
+  const d = detail.data
+  const h = d?.header
+  const open = (no: string) => { setMessage(null); setCaseNo(no); setParams({ case: no }) }
+  const go = () => {
+    const no = caseNo.trim().toUpperCase()
+    if (!no) return setMessage('Please enter a case number.')
+    if (!valid.test(no)) return setMessage('That case number contains characters that are not allowed.')
+    open(no)
   }
+  const step = useMutation({
+    mutationFn: (dir: 'next' | 'previous') => (dir === 'next' ? casesApi.next(selected!) : casesApi.previous(selected!)),
+    onSuccess: (r) => open(r.caseNumber),
+    onError: (e) => setMessage((e as Error).message),
+  })
+  const print = async (kind: Parameters<typeof casesApi.print>[1], name: string) => {
+    setMessage(null)
+    try { download(await casesApi.print(selected!, kind), `case-${selected}-${name}`) } catch (e) { setMessage((e as Error).message) }
+  }
+  const ro = (v: string | null | undefined, w: number | string = '100%', sx = box) => <TextField size="small" sx={{ ...sx, width: w }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
 
   return (
-    <>
-      <Typography variant="h5" gutterBottom>Case Inquiry</Typography>
-      <Box component="form" onSubmit={submit} sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-        <TextField select size="small" label="Search by" value={type} onChange={(e) => setType(e.target.value as CaseSearchBy)} sx={{ width: 220 }}>
-          {searchTypes.map((s) => <MenuItem key={s.value} value={s.value}>{s.label}</MenuItem>)}
-        </TextField>
-        <TextField size="small" label="Search value" value={input} onChange={(e) => setInput(e.target.value)} autoFocus sx={{ width: 280 }} />
-        <Button type="submit" variant="contained">Search</Button>
-      </Box>
-      {formError && <Alert severity="warning" sx={{ mb: 2 }}>{formError}</Alert>}
-      {search.error && <Alert severity="error" sx={{ mb: 2 }}>{(search.error as Error).message}</Alert>}
-      {search.isLoading && <Typography color="text.secondary">Searching...</Typography>}
-      {items && items.length === 0 && <Alert severity="info" sx={{ mb: 2 }}>No Record Available</Alert>}
-      {items && items.length > 1 && (
-        <>
-          {search.data?.truncated && <Alert severity="info" sx={{ mb: 1 }}>Showing the first {items.length} cases. Enter more characters to narrow the search.</Alert>}
-          <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 320, mb: 2 }}>
-            <Table size="small" stickyHeader>
-              <TableHead>
-                <TableRow>{['Case No', 'Member No', 'Cover', 'Name', 'Policy No', 'Plan', 'Hospital', 'Admitted', 'Discharged', 'Reserve', 'Status'].map((h) => <TableCell key={h}>{h}</TableCell>)}</TableRow>
-              </TableHead>
-              <TableBody>
-                {items.map((c) => (
-                  <TableRow key={c.caseNumber} hover selected={c.caseNumber === selected} sx={{ cursor: 'pointer' }} onClick={() => setParams({ by, q, case: c.caseNumber })}>
-                    <TableCell>{c.caseNumber}</TableCell><TableCell>{c.memberNumber}</TableCell><TableCell>{c.coverId}</TableCell><TableCell>{c.memberName}</TableCell>
-                    <TableCell>{c.policyNo}</TableCell><TableCell>{c.planCode}</TableCell><TableCell>{c.hospitalCode}</TableCell>
-                    <TableCell>{formatDate(c.admitted)}</TableCell><TableCell>{formatDate(c.discharged)}</TableCell>
-                    <TableCell align="right">{formatMoney(c.reserveAmount)}</TableCell><TableCell>{withLabel(c.status, statusLabels)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </>
-      )}
-      {selected && <CaseDetailView key={selected} caseNumber={selected} />}
-    </>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: 1 }}>
+      <LegacyTitle>Case Inquiry</LegacyTitle>
+      {message && <Alert severity="warning" onClose={() => setMessage(null)}>{message}</Alert>}
+      {detail.error && <Alert severity="error">{(detail.error as Error).message}</Alert>}
+
+      <Paper variant="outlined" sx={{ p: 1, display: 'grid', gap: 0.5 }}>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Typography sx={{ fontSize: 13, width: 60 }}>Case No</Typography>
+          <TextField size="small" sx={{ ...box, width: 140 }} value={caseNo} onChange={(e) => setCaseNo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') go() }} slotProps={{ htmlInput: { maxLength: 15 } }} />
+          <Button size="small" variant="outlined" disabled={detail.isFetching} onClick={go}>Go</Button>
+          <Button size="small" variant="outlined" disabled={!selected || step.isPending} onClick={() => step.mutate('previous')}>Prev</Button>
+          <Button size="small" variant="outlined" disabled={!selected || step.isPending} onClick={() => step.mutate('next')}>Next</Button>
+          <Button size="small" variant="outlined" onClick={() => setSearching(true)}>Search</Button>
+          <Typography sx={{ fontSize: 13, ml: 1 }}>Pol No</Typography>{ro(d?.member.policyNo, 170)}
+          <Typography sx={{ fontSize: 13, ml: 1 }}>Cas Status</Typography>{ro(h ? withLabel(h.status, statusLabels) : '', 140, yellow)}
+          <Typography sx={{ fontSize: 13, ml: 1 }}>Claimability</Typography>{ro(h ? withLabel(h.claimability, claimabilityLabels) : '', 220)}
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Typography sx={{ fontSize: 13, width: 60 }}>Mem No</Typography>{ro(h?.memberNumber, 140)}
+          <Button size="small" variant="outlined" disabled={!h} onClick={() => h && navigate(`/membership/enquiry?member=${encodeURIComponent(h.memberNumber)}`)}>Enq</Button>
+          <Typography sx={{ fontSize: 13, ml: 1 }}>Mem Name</Typography>{ro(d?.member.name, 300)}
+          <Typography sx={{ fontSize: 13, ml: 1 }}>IC Num</Typography>{ro(d?.member.icBcPp, 160)}
+          <Typography sx={{ fontSize: 13, ml: 1 }}>Pending</Typography>{ro(h ? withLabel(h.pending, yesNo) : '', 90)}
+          {d?.hasScannedDocuments === false && <Chip size="small" variant="outlined" label="Fax documents not in system!" />}
+        </Box>
+      </Paper>
+
+      <Paper variant="outlined">
+        {d ? <CaseDetailView key={d.header.caseNumber} detail={d} />
+          : <Box sx={{ p: 2 }}><Typography color="text.secondary">{detail.isLoading ? 'Loading...' : 'Enter a case number and click Go, or Search.'}</Typography></Box>}
+      </Paper>
+
+      <Paper variant="outlined" sx={{ p: 1, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+        {d && <L label="Patient" w={55}>{ro(`${h?.coverId ?? ''} - ${h?.patientName ?? ''}`, 300)}</L>}
+        <Box sx={{ flex: 1 }} />
+        <Button size="small" variant="outlined" disabled={!d} onClick={() => print('enquiry.xlsx', 'enquiry.xlsx')}>Print Case</Button>
+        <Button size="small" variant="outlined" disabled={!d} onClick={() => print('notes.pdf', 'notes.pdf')}>Print Mgmt Note</Button>
+        <Button size="small" variant="outlined" disabled={!d} onClick={() => print('notes.pdf?kind=internal', 'internal-notes.pdf')}>Print Internal Note</Button>
+        {can(PAYMENT_PRINT_POSITION) && <Button size="small" variant="outlined" disabled={!d} onClick={() => print('payments.xlsx', 'payments.xlsx')}>Print Pymt</Button>}
+        <Button size="small" variant="outlined" onClick={() => navigate('/')}>Exit</Button>
+      </Paper>
+
+      <CaseInquirySearchDialog open={searching} onClose={() => setSearching(false)} onPick={(no) => { setSearching(false); open(no) }} />
+    </Box>
   )
 }
