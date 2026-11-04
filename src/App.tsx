@@ -18,6 +18,20 @@ import { AdjustmentPage } from './features/membership/AdjustmentPage'
 import { McoPendingPage } from './features/membership/McoPendingPage'
 import { RegistrationPage } from './features/membership/RegistrationPage'
 import { BordxUploadPage } from './features/membership/BordxUploadPage'
+import { HospitalInvoicePostingPage } from './features/posting/HospitalInvoicePostingPage'
+import { MemberInvoicePostingPage } from './features/posting/MemberInvoicePostingPage'
+import { HospitalPaymentPostingPage } from './features/posting/HospitalPaymentPostingPage'
+import { PayorReceiptPostingPage } from './features/posting/PayorReceiptPostingPage'
+import { PayorReceiptPage } from './features/payments/PayorReceiptPage'
+import { HospitalPaymentPage } from './features/payments/HospitalPaymentPage'
+import { PaymentTrackingPage } from './features/payments/PaymentTrackingPage'
+import { InsertWorksheetPage } from './features/bordereaux/InsertWorksheetPage'
+import { RemoveWorksheetPage } from './features/bordereaux/RemoveWorksheetPage'
+import { CreditDebitNotePage } from './features/worksheets/CreditDebitNotePage'
+import { UserPermissionPage } from './features/maintenance/UserPermissionPage'
+import { SppaExportPage } from './features/cases/SppaExportPage'
+import { SppaUploadPage } from './features/cases/SppaUploadPage'
+import { BordxPayorPostingPage } from './features/posting/BordxPayorPostingPage'
 import { BenefitEntryPage } from './features/maintenance/BenefitEntryPage'
 import { BenefitListingPage } from './features/maintenance/BenefitListingPage'
 import { IcdSelectionPage } from './features/maintenance/IcdSelectionPage'
@@ -92,6 +106,48 @@ export default function App() {
           </Route>
           <Route element={<RequireScreen position={byPath['/membership/bordx-upload']} />}>
             <Route path="membership/bordx-upload" element={<BordxUploadPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/ac-export/invoice/hospital']} />}>
+            <Route path="ac-export/invoice/hospital" element={<HospitalInvoicePostingPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/ac-export/invoice/member']} />}>
+            <Route path="ac-export/invoice/member" element={<MemberInvoicePostingPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/ac-export/payment/hospital']} />}>
+            <Route path="ac-export/payment/hospital" element={<HospitalPaymentPostingPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/ac-export/receipt/payor']} />}>
+            <Route path="ac-export/receipt/payor" element={<PayorReceiptPostingPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/receipts/payor']} />}>
+            <Route path="receipts/payor" element={<PayorReceiptPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/receipts/payor-manual']} />}>
+            <Route path="receipts/payor-manual" element={<PayorReceiptPage key="manual" manual />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/payments/hospital']} />}>
+            <Route path="payments/hospital" element={<HospitalPaymentPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/payments/hospital-enquiry']} />}>
+            <Route path="payments/hospital-enquiry" element={<HospitalPaymentPage key="enquiry" enquiry />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/payments/tracking']} />}>
+            <Route path="payments/tracking" element={<PaymentTrackingPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/bordx/insert-worksheet']} />}>
+            <Route path="bordx/insert-worksheet" element={<InsertWorksheetPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/bordx/remove-worksheet']} />}>
+            <Route path="bordx/remove-worksheet" element={<RemoveWorksheetPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/worksheets/credit-debit-note']} />}>
+            <Route path="worksheets/credit-debit-note" element={<CreditDebitNotePage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/maintenance/user-permission']} />}>
+            <Route path="maintenance/user-permission" element={<UserPermissionPage />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/ac-export/bordx/payor']} />}>
+            <Route path="ac-export/bordx/payor" element={<BordxPayorPostingPage />} />
           </Route>
           <Route element={<RequireScreen position={byPath['/maintenance/benefit-entry']} />}>
             <Route path="maintenance/benefit-entry" element={<BenefitEntryPage />} />
@@ -176,6 +232,15 @@ export default function App() {
           </Route>
           <Route element={<RequireScreen position={byPath['/cases/case-ascii']} />}>
             <Route path="cases/case-ascii" element={<AsciiExportPage key="case" kind="case" />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/cases/sppa-ascii']} />}>
+            <Route path="cases/sppa-ascii" element={<SppaExportPage key="bordx" />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/cases/sppa-ascii-payment']} />}>
+            <Route path="cases/sppa-ascii-payment" element={<SppaExportPage key="payment" byPaymentDate />} />
+          </Route>
+          <Route element={<RequireScreen position={byPath['/cases/sppa-upload']} />}>
+            <Route path="cases/sppa-upload" element={<SppaUploadPage />} />
           </Route>
           <Route element={<RequireScreen position={byPath['/cases/send-to-claims-rep']} />}>
             <Route path="cases/send-to-claims-rep" element={<SendToClaimsPage key="rep" kind="rep" />} />

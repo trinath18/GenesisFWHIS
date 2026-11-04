@@ -1,4 +1,4 @@
-﻿import { Alert, Box, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material'
+import { Alert, Box, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { useParams } from 'react-router-dom'
@@ -29,6 +29,11 @@ function TrackingScreen({ id }: { id: string }) {
     setExportError(null)
     try { download(await trackingApi.export(id, applied ?? draft), `${id}.xlsx`) } catch (err) { setExportError(err instanceof Error ? err.message : 'Export failed') }
   }
+  const [printing, setPrinting] = useState<string | null>(null)
+  const printOut = async (key: string) => {
+    setExportError(null); setPrinting(key)
+    try { download(await trackingApi.print(id, key, applied ?? draft), `${key}.pdf`) } catch (err) { setExportError(err instanceof Error ? err.message : 'Print failed') } finally { setPrinting(null) }
+  }
 
   if (definition.isLoading) return <Typography color="text.secondary">Loading...</Typography>
   if (definition.error) return <Alert severity="error">{(definition.error as Error).message}</Alert>
@@ -44,6 +49,7 @@ function TrackingScreen({ id }: { id: string }) {
           <Button type="submit" variant="contained">Search</Button>
           <Button onClick={clear}>Clear</Button>
           <Button onClick={exportExcel} disabled={applied === null}>Excel</Button>
+          {def.prints?.map((p) => <Button key={p.key} onClick={() => printOut(p.key)} disabled={applied === null || printing !== null}>{printing === p.key ? 'Printing...' : p.label}</Button>)}
         </Box>
       </Box>
       {exportError && <Alert severity="error" sx={{ mb: 2 }}>{exportError}</Alert>}

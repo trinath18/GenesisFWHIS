@@ -55,10 +55,29 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Tracking (Simple)",
-                             "positions":  [
-                                               6
-                                           ],
-                             "legacyForm":  "frmNewMBMTrackingSimple"
+                             "children":  [
+                                              {
+                                                  "label":  "Summary",
+                                                  "route":  "/summary/member-summary-simple",
+                                                  "positions":  [
+                                                                    6
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Listing",
+                                                  "route":  "/tracking/member-tracking-simple",
+                                                  "positions":  [
+                                                                    6
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Print Label",
+                                                  "route":  "/tracking/member-labels",
+                                                  "positions":  [
+                                                                    6
+                                                                ]
+                                              }
+                                          ]
                          },
                          {
                              "label":  "Tracking (Jupiter)",
@@ -320,24 +339,18 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Claims ASCII (To SPPA)",
-                             "positions":  [
-                                               18
-                                           ],
-                             "legacyForm":  "frmCLMASCIISPPA2012"
+                             "route":  "/cases/sppa-ascii",
+                             "positions":  18
                          },
                          {
                              "label":  "Claims ASCII Pymt(To SPPA)",
-                             "positions":  [
-                                               18
-                                           ],
-                             "legacyForm":  "frmCLMASCIISPPAPymt"
+                             "route":  "/cases/sppa-ascii-payment",
+                             "positions":  18
                          },
                          {
                              "label":  "Claims ASCII (From SPPA)",
-                             "positions":  [
-                                               18
-                                           ],
-                             "legacyForm":  "frmCLMASCIIUpload2012"
+                             "route":  "/cases/sppa-upload",
+                             "positions":  18
                          },
                          {
                              "label":  "Claims ASCII (Kurnia)",
@@ -451,10 +464,8 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Generate Credit/Debit Note",
-                             "positions":  [
-                                               65
-                                           ],
-                             "legacyForm":  "frmGenerateCNNote"
+                             "route":  "/worksheets/credit-debit-note",
+                             "positions":  65
                          },
                          {
                              "label":  "Worksheet Send to A/C",
@@ -537,17 +548,62 @@ export const menuTree: MenuNode[] = [
                                               },
                                               {
                                                   "label":  "Claim Report 3",
-                                                  "positions":  [
-                                                                    46
-                                                                ],
-                                                  "legacyForm":  "FrmClaimRpt3"
+                                                  "children":  [
+                                                                   {
+                                                                       "label":  "Date - By Invoice No",
+                                                                       "route":  "/tracking/claim-report3-invoice",
+                                                                       "positions":  [
+                                                                                         46
+                                                                                     ]
+                                                                   },
+                                                                   {
+                                                                       "label":  "Date - By Case No",
+                                                                       "route":  "/tracking/claim-report3-case",
+                                                                       "positions":  [
+                                                                                         46
+                                                                                     ]
+                                                                   },
+                                                                   {
+                                                                       "label":  "Date - By Claim No",
+                                                                       "route":  "/tracking/claim-report3-claim",
+                                                                       "positions":  [
+                                                                                         46
+                                                                                     ]
+                                                                   },
+                                                                   {
+                                                                       "label":  "CLM Value Control",
+                                                                       "route":  "/tracking/claim-report3-value",
+                                                                       "positions":  [
+                                                                                         46
+                                                                                     ]
+                                                                   },
+                                                                   {
+                                                                       "label":  "Bordx",
+                                                                       "route":  "/summary/claim-report3-bordx",
+                                                                       "positions":  [
+                                                                                         46
+                                                                                     ]
+                                                                   }
+                                                               ]
                                               },
                                               {
                                                   "label":  "Claim Report 4",
-                                                  "positions":  [
-                                                                    47
-                                                                ],
-                                                  "legacyForm":  "FrmClaimRpt4"
+                                                  "children":  [
+                                                                   {
+                                                                       "label":  "Cases \u0026 Worksheets",
+                                                                       "route":  "/tracking/claim-report4-worksheets",
+                                                                       "positions":  [
+                                                                                         47
+                                                                                     ]
+                                                                   },
+                                                                   {
+                                                                       "label":  "Cases without Worksheets",
+                                                                       "route":  "/tracking/claim-report4-no-worksheet",
+                                                                       "positions":  [
+                                                                                         47
+                                                                                     ]
+                                                                   }
+                                                               ]
                                               },
                                               {
                                                   "label":  "Claim Report (Simple)",
@@ -658,17 +714,13 @@ export const menuTree: MenuNode[] = [
                              "children":  [
                                               {
                                                   "label":  "Insert Worksheet",
-                                                  "positions":  [
-                                                                    30
-                                                                ],
-                                                  "legacyForm":  "FrmWksBordx"
+                                                  "route":  "/bordx/insert-worksheet",
+                                                  "positions":  30
                                               },
                                               {
                                                   "label":  "Remove Worksheet",
-                                                  "positions":  [
-                                                                    31
-                                                                ],
-                                                  "legacyForm":  "FrmBordxRevise"
+                                                  "route":  "/bordx/remove-worksheet",
+                                                  "positions":  31
                                               }
                                           ]
                          },
@@ -894,17 +946,13 @@ export const menuTree: MenuNode[] = [
                              "children":  [
                                               {
                                                   "label":  "Hospital",
-                                                  "positions":  [
-                                                                    169
-                                                                ],
-                                                  "legacyForm":  "frmPostingInvoiceHosp"
+                                                  "route":  "/ac-export/invoice/hospital",
+                                                  "positions":  169
                                               },
                                               {
                                                   "label":  "Member",
-                                                  "positions":  [
-                                                                    170
-                                                                ],
-                                                  "legacyForm":  "frmPostingInvoiceMBM"
+                                                  "route":  "/ac-export/invoice/member",
+                                                  "positions":  170
                                               }
                                           ]
                          },
@@ -920,10 +968,8 @@ export const menuTree: MenuNode[] = [
                                               },
                                               {
                                                   "label":  "Payor",
-                                                  "positions":  [
-                                                                    172
-                                                                ],
-                                                  "legacyForm":  "frmPostingRecPayor"
+                                                  "route":  "/ac-export/receipt/payor",
+                                                  "positions":  172
                                               }
                                           ]
                          },
@@ -932,10 +978,8 @@ export const menuTree: MenuNode[] = [
                              "children":  [
                                               {
                                                   "label":  "Hospital",
-                                                  "positions":  [
-                                                                    173
-                                                                ],
-                                                  "legacyForm":  "frmPostingPay2Hosp"
+                                                  "route":  "/ac-export/payment/hospital",
+                                                  "positions":  173
                                               },
                                               {
                                                   "label":  "Member",
@@ -958,10 +1002,8 @@ export const menuTree: MenuNode[] = [
                                               },
                                               {
                                                   "label":  "Payor",
-                                                  "positions":  [
-                                                                    176
-                                                                ],
-                                                  "legacyForm":  "frmPostingBordxInv2Pay"
+                                                  "route":  "/ac-export/bordx/payor",
+                                                  "positions":  176
                                               }
                                           ]
                          },
@@ -1003,10 +1045,8 @@ export const menuTree: MenuNode[] = [
         "children":  [
                          {
                              "label":  "To Hospital",
-                             "positions":  [
-                                               55
-                                           ],
-                             "legacyForm":  "FrmPaymentHospital"
+                             "route":  "/payments/hospital",
+                             "positions":  55
                          },
                          {
                              "label":  "To Member",
@@ -1118,7 +1158,7 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Payment Tracking",
-                             "route":  "/tracking/payment-tracking",
+                             "route":  "/payments/tracking",
                              "positions":  58
                          },
                          {
@@ -1126,7 +1166,7 @@ export const menuTree: MenuNode[] = [
                              "children":  [
                                               {
                                                   "label":  "Payment To Hospital",
-                                                  "route":  "/tracking/payment-hospital",
+                                                  "route":  "/payments/hospital-enquiry",
                                                   "positions":  145
                                               },
                                               {
@@ -1186,17 +1226,13 @@ export const menuTree: MenuNode[] = [
                          },
                          {
                              "label":  "Payor",
-                             "positions":  [
-                                               61
-                                           ],
-                             "legacyForm":  "FrmReceiptPayor"
+                             "route":  "/receipts/payor",
+                             "positions":  61
                          },
                          {
                              "label":  "Payor (Manual)",
-                             "positions":  [
-                                               61
-                                           ],
-                             "legacyForm":  "FrmReceiptPayorManual"
+                             "route":  "/receipts/payor-manual",
+                             "positions":  61
                          },
                          {
                              "label":  "MNRB",
@@ -1513,16 +1549,34 @@ export const menuTree: MenuNode[] = [
                                                                 ]
                                               },
                                               {
+                                                  "label":  "Hospital Info",
+                                                  "route":  "/lookups/entity-hospital",
+                                                  "positions":  [
+                                                                    70
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Payor Info",
+                                                  "route":  "/lookups/entity-payor",
+                                                  "positions":  [
+                                                                    72
+                                                                ]
+                                              },
+                                              {
+                                                  "label":  "Payor Group",
+                                                  "route":  "/lookups/entity-payor-group",
+                                                  "positions":  [
+                                                                    77
+                                                                ]
+                                              },
+                                              {
                                                   "label":  "Other Entity Tabs",
                                                   "positions":  [
                                                                     69,
-                                                                    70,
                                                                     71,
-                                                                    72,
                                                                     73,
                                                                     74,
                                                                     75,
-                                                                    77,
                                                                     78,
                                                                     79
                                                                 ],
@@ -1698,10 +1752,8 @@ export const menuTree: MenuNode[] = [
                                               },
                                               {
                                                   "label":  "User Permission",
-                                                  "positions":  [
-                                                                    112
-                                                                ],
-                                                  "legacyForm":  "frmUserPermissionMaintenance"
+                                                  "route":  "/maintenance/user-permission",
+                                                  "positions":  112
                                               },
                                               {
                                                   "label":  "MBM Del",

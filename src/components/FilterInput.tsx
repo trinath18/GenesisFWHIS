@@ -12,11 +12,12 @@ export function FilterInput({ f, values, onChange }: { f: TrackingFilterDef; val
       </Box>
     )
   }
-  if (f.kind === 'TextRange') {
+  if (f.kind === 'TextRange' || f.kind === 'NumberRange') {
+    const type = f.kind === 'NumberRange' ? 'number' : undefined
     return (
       <Box sx={{ display: 'flex', gap: 1 }}>
-        <TextField size="small" label={`${f.label} from`} value={values[`${f.key}.from`] ?? ''} onChange={set(`${f.key}.from`)} />
-        <TextField size="small" label="to" value={values[`${f.key}.to`] ?? ''} onChange={set(`${f.key}.to`)} />
+        <TextField size="small" type={type} label={`${f.label} from`} value={values[`${f.key}.from`] ?? ''} onChange={set(`${f.key}.from`)} />
+        <TextField size="small" type={type} label="to" value={values[`${f.key}.to`] ?? ''} onChange={set(`${f.key}.to`)} />
       </Box>
     )
   }
