@@ -174,7 +174,7 @@ export function AdjustmentPage() {
           <TextField size="small" sx={{ ...box, width: 220 }} value={number} onChange={(e) => setNumber(e.target.value)} autoFocus slotProps={{ htmlInput: { maxLength: 15 } }} />
           <Button size="small" type="submit" variant="outlined" disabled={!number.trim() || load.isPending}>Go</Button>
           <Button size="small" variant="outlined" disabled={!number.trim() || step.isPending} onClick={() => step.mutate('previous')}>Pre</Button>
-          <Button size="small" variant="outlined" disabled={!number.trim() || step.isPending} onClick={() => step.mutate('next')}>Next</Button>
+          <Button size="small" variant="outlined" disabled={step.isPending} onClick={() => step.mutate('next')}>Next</Button>
           <Button size="small" variant="outlined" onClick={() => { setSearchOpen(true); search.reset() }}>Search</Button>
         </Box>
       </Paper>

@@ -72,7 +72,7 @@ export function NonDisclosurePage() {
         <Button variant="contained" disabled={load.isPending} onClick={go}>Go</Button>
         <Button variant="outlined" disabled={number.trim().length < 3 || search.isPending} onClick={() => search.mutate(number)}>Search</Button>
         <Button variant="outlined" disabled={!number.trim() || step.isPending} onClick={() => step.mutate(false)}>Pre</Button>
-        <Button variant="outlined" disabled={!number.trim() || step.isPending} onClick={() => step.mutate(true)}>Next</Button>
+        <Button variant="outlined" disabled={step.isPending} onClick={() => step.mutate(true)}>Next</Button>
         <Box sx={{ flex: 1 }} />
         <Button variant="outlined" disabled={!view} onClick={() => view && download(csvBlob(headers, view.persons.map(cells)), `non-disclosure-${view.memberNumber.replace(/[^A-Za-z0-9-]/g, '_')}.csv`)}>Print to File</Button>
         <Button variant="outlined" onClick={() => { setNumber(''); setView(null); pick(null); setMessage(null) }}>Clear</Button>

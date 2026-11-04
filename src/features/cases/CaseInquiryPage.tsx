@@ -38,7 +38,8 @@ export function CaseInquiryPage() {
     open(no)
   }
   const step = useMutation({
-    mutationFn: (dir: 'next' | 'previous') => (dir === 'next' ? casesApi.next(selected!) : casesApi.previous(selected!)),
+    // Legacy CmdNext used the box: empty loads the first case.
+    mutationFn: (dir: 'next' | 'previous') => (dir === 'next' ? casesApi.next(selected ?? caseNo) : casesApi.previous(selected ?? caseNo.trim())),
     onSuccess: (r) => open(r.caseNumber),
     onError: (e) => setMessage((e as Error).message),
   })
@@ -59,8 +60,8 @@ export function CaseInquiryPage() {
           <Typography sx={{ fontSize: 13, width: 60 }}>Case No</Typography>
           <TextField size="small" sx={{ ...box, width: 140 }} value={caseNo} onChange={(e) => setCaseNo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') go() }} slotProps={{ htmlInput: { maxLength: 15 } }} />
           <Button size="small" variant="outlined" disabled={detail.isFetching} onClick={go}>Go</Button>
-          <Button size="small" variant="outlined" disabled={!selected || step.isPending} onClick={() => step.mutate('previous')}>Prev</Button>
-          <Button size="small" variant="outlined" disabled={!selected || step.isPending} onClick={() => step.mutate('next')}>Next</Button>
+          <Button size="small" variant="outlined" disabled={!(selected || caseNo.trim()) || step.isPending} onClick={() => step.mutate('previous')}>Prev</Button>
+          <Button size="small" variant="outlined" disabled={step.isPending} onClick={() => step.mutate('next')}>Next</Button>
           <Button size="small" variant="outlined" onClick={() => setSearching(true)}>Search</Button>
           <Typography sx={{ fontSize: 13, ml: 1 }}>Pol No</Typography>{ro(d?.member.policyNo, 170)}
           <Typography sx={{ fontSize: 13, ml: 1 }}>Cas Status</Typography>{ro(h ? withLabel(h.status, statusLabels) : '', 140, yellow)}

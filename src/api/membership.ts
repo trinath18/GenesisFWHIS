@@ -271,8 +271,8 @@ const base = (n: string) => `/api/membership/members/${encodeURIComponent(n)}`
 export const membershipApi = {
   search: (q: string) => api.get<MemberSearchPage>(`/api/membership/members?q=${encodeURIComponent(q.trim())}`),
   get: (n: string) => api.get<MemberDetail>(base(n)),
-  /** Legacy Pre / Next: the neighbouring membership number. */
-  next: (n: string) => api.get<{ number: string }>(`${base(n)}/next`),
+  /** Legacy Pre / Next: the neighbouring membership number; Next on an empty box gives the first member. */
+  next: (n: string) => api.get<{ number: string }>(n.trim() ? `${base(n.trim())}/next` : '/api/membership/members/first'),
   previous: (n: string) => api.get<{ number: string }>(`${base(n)}/previous`),
   amendments: (n: string) => api.get<MemberAmendment[]>(`${base(n)}/amendments`),
   cases: (n: string) => api.get<MemberCase[]>(`${base(n)}/cases`),

@@ -26,7 +26,9 @@ export type CaseAuditRequest = Omit<CaseAuditRecord, 'updatedBy' | 'updated'>
 const ar = '/api/case-audit-review'
 export const caseAuditReviewApi = {
   get: (c: string) => api.get<CaseAuditView>(`${ar}/${encodeURIComponent(c)}`),
-  next: (c: string, reviewedOnly = false) => api.get<{ caseNumber: string }>(`${ar}/${encodeURIComponent(c)}/next${reviewedOnly ? '?reviewedOnly=true' : ''}`),
+  /** Next on an empty box gives the first case (legacy CmdNext). */
+  next: (c: string, reviewedOnly = false) =>
+    api.get<{ caseNumber: string }>(`${ar}/${c.trim() ? `${encodeURIComponent(c.trim())}/next` : 'first'}${reviewedOnly ? '?reviewedOnly=true' : ''}`),
   previous: (c: string) => api.get<{ caseNumber: string }>(`${ar}/${encodeURIComponent(c)}/previous`),
   save: (c: string, r: CaseAuditRequest) => api.put<{ updated: boolean }>(`${ar}/${encodeURIComponent(c)}`, r),
 }
@@ -71,7 +73,8 @@ export interface MemberSearchItem { number: string; coverId: string | null; name
 const nd = '/api/case-non-disclosure'
 export const nonDisclosureApi = {
   get: (m: string) => api.get<NonDisclosureView>(`${nd}/${encodeURIComponent(m)}`),
-  next: (m: string) => api.get<{ memberNumber: string }>(`${nd}/${encodeURIComponent(m)}/next`),
+  /** Next on an empty box gives the first member (legacy CmdNext). */
+  next: (m: string) => api.get<{ memberNumber: string }>(m.trim() ? `${nd}/${encodeURIComponent(m.trim())}/next` : `${nd}/first`),
   previous: (m: string) => api.get<{ memberNumber: string }>(`${nd}/${encodeURIComponent(m)}/previous`),
   search: (q: string) => api.get<{ items: MemberSearchItem[]; truncated: boolean }>(`${nd}/search?q=${encodeURIComponent(q.trim())}`),
   save: (m: string, cover: string, r: NonDisclosureRequest) => api.put<{ message: string }>(`${nd}/${encodeURIComponent(m)}/${encodeURIComponent(cover)}`, r),

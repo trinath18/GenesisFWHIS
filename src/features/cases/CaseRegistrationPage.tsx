@@ -338,7 +338,7 @@ export function CaseRegistrationPage({ mode = 'register' }: { mode?: 'register' 
           <Button size="small" variant="outlined" disabled={!caseNo.trim() || load.isPending} onClick={() => load.mutate(caseNo)}>Go</Button>
           <Button size="small" variant="outlined" onClick={() => setSearching(true)}>Search</Button>
           <Button size="small" variant="outlined" disabled={!adjusted || step.isPending} onClick={() => step.mutate('previous')}>Pre</Button>
-          <Button size="small" variant="outlined" disabled={!adjusted || step.isPending} onClick={() => step.mutate('next')}>Next</Button>
+          <Button size="small" variant="outlined" disabled={step.isPending} onClick={() => step.mutate('next')}>Next</Button>
         </> : <>
           <Typography sx={{ fontSize: 13 }}>MBM Num</Typography>
           <TextField size="small" sx={{ ...box, width: 180 }} value={number} onChange={(e) => setNumber(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && number.trim()) { setMessage(null); show.mutate(number) } }} slotProps={{ htmlInput: { maxLength: 15 } }} />

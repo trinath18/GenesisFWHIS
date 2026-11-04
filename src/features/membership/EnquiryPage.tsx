@@ -106,7 +106,8 @@ export function EnquiryPage() {
     open(n)
   }
   const step = useMutation({
-    mutationFn: (dir: 'next' | 'previous') => (dir === 'next' ? membershipApi.next(selected!) : membershipApi.previous(selected!)),
+    // Legacy CmdNext used the box: empty loads the first member.
+    mutationFn: (dir: 'next' | 'previous') => (dir === 'next' ? membershipApi.next(selected ?? number) : membershipApi.previous(selected ?? number.trim())),
     onSuccess: (r) => open(r.number), onError: (e) => setMessage((e as Error).message),
   })
   const print = async (kind: 'enquiry.pdf' | 'exclusion-form.xlsx' | 'history.xlsx') => {
@@ -124,8 +125,8 @@ export function EnquiryPage() {
         <Typography sx={{ fontSize: 13 }}>Mem Num.</Typography>
         <TextField size="small" sx={{ ...box, width: 170 }} value={number} onChange={(e) => setNumber(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') go() }} slotProps={{ htmlInput: { maxLength: 15 } }} />
         <Button size="small" variant="outlined" disabled={member.isFetching} onClick={go}>Go</Button>
-        <Button size="small" variant="outlined" disabled={!selected || step.isPending} onClick={() => step.mutate('previous')}>Pre</Button>
-        <Button size="small" variant="outlined" disabled={!selected || step.isPending} onClick={() => step.mutate('next')}>Next</Button>
+        <Button size="small" variant="outlined" disabled={!(selected || number.trim()) || step.isPending} onClick={() => step.mutate('previous')}>Pre</Button>
+        <Button size="small" variant="outlined" disabled={step.isPending} onClick={() => step.mutate('next')}>Next</Button>
         <Button size="small" variant="outlined" onClick={() => setSearching(true)}>Search</Button>
         <Typography sx={{ fontSize: 13, ml: 1 }}>Pol Status</Typography>{ro(m?.status, 60, yellow)}
         <Typography sx={{ fontSize: 13, ml: 1 }}>Exp. Status</Typography>{ro(m ? (m.expiredStatus === 'Y' ? 'Expired' : m.expiredStatus ?? '') : '', 80, yellow)}

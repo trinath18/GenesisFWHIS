@@ -66,7 +66,8 @@ export const caseAdjustmentApi = {
   options: () => api.get<CaseRegistrationOptions>(`${adj}/options`),
   hospitals: (search: string) => api.get<CaseOption[]>(`${adj}/hospitals?search=${encodeURIComponent(search)}`),
   get: (c: string) => api.get<CaseAdjustmentView>(`${adj}/${encodeURIComponent(c)}`),
-  next: (c: string) => api.get<{ caseNumber: string }>(`${adj}/${encodeURIComponent(c)}/next`),
+  /** Next on an empty box gives the first case (legacy CmdNext). */
+  next: (c: string) => api.get<{ caseNumber: string }>(c.trim() ? `${adj}/${encodeURIComponent(c.trim())}/next` : `${adj}/first`),
   previous: (c: string) => api.get<{ caseNumber: string }>(`${adj}/${encodeURIComponent(c)}/previous`),
   update: (c: string, status: string, form: CaseRegistrationRequest) => api.put<{ updated: boolean }>(`${adj}/${encodeURIComponent(c)}`, { status, form }),
 }

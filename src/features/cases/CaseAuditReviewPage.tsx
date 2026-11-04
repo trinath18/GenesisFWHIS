@@ -68,8 +68,8 @@ export function CaseAuditReviewPage() {
         <TextField size="small" label="Case Num" value={caseNo} onChange={(e) => setCaseNo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && caseNo.trim()) load.mutate(caseNo.trim()) }} slotProps={{ htmlInput: { maxLength: 15 } }} />
         <Button variant="contained" disabled={!caseNo.trim() || load.isPending} onClick={() => load.mutate(caseNo.trim())}>Go</Button>
         <Button variant="outlined" disabled={!caseNo.trim() || step.isPending} onClick={() => step.mutate('prev')}>Prev</Button>
-        <Button variant="outlined" disabled={!caseNo.trim() || step.isPending} onClick={() => step.mutate('next')}>Next</Button>
-        <Button variant="outlined" disabled={!caseNo.trim() || step.isPending} onClick={() => step.mutate('nextReviewed')}>Next Rev Case</Button>
+        <Button variant="outlined" disabled={step.isPending} onClick={() => step.mutate('next')}>Next</Button>
+        <Button variant="outlined" disabled={step.isPending} onClick={() => step.mutate('nextReviewed')}>Next Rev Case</Button>
         <Box sx={{ flex: 1 }} />
         <Button variant="contained" color="secondary" disabled={!canSave || save.isPending} onClick={() => setConfirming(true)}>Update</Button>
       </Paper>
