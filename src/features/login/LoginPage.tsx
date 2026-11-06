@@ -30,7 +30,7 @@ export function LoginPage() {
   }
 
   return (
-    <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '100vh', bgcolor: 'grey.100' }}>
+    <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '100vh', bgcolor: 'background.default' }}>
       <Paper component="form" onSubmit={submit} sx={{ p: 4, width: 360, display: 'grid', gap: 2 }}>
         <Typography variant="h5">Genesis FIS</Typography>
         {error && <Alert severity="error">{error}</Alert>}

@@ -1,7 +1,8 @@
-﻿import { Alert, Box, Button, List, ListItemButton, ListItemText, Paper, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, List, ListItemButton, ListItemText, Paper, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { icdSelectionApi, type IcdCodeRow } from '../../api/icdSelection'
+import { LegacyEm } from '../../components/LegacyForm'
 
 function Pane({ title, rows, selected, onToggle, total }: { title: string; rows: IcdCodeRow[]; selected: Set<string>; onToggle: (code: string) => void; total: number }) {
   return (
@@ -53,7 +54,7 @@ export function IcdSelectionPage() {
         </Box>
         <Pane title="ICD Code Applied" rows={v?.applied ?? []} selected={right} onToggle={toggle(right, setRight)} total={v?.appliedTotal ?? 0} />
       </Box>
-      <Typography variant="body2"><strong style={{ color: '#c62828' }}>TOTAL RECORDS</strong> {v ? v.availableTotal + v.appliedTotal : 0} &nbsp; (lists show at most 2,000 codes each; use Search to narrow)</Typography>
+      <Typography variant="body2"><LegacyEm>TOTAL RECORDS</LegacyEm> {v ? v.availableTotal + v.appliedTotal : 0} &nbsp; (lists show at most 2,000 codes each; use Search to narrow)</Typography>
     </Box>
   )
 }

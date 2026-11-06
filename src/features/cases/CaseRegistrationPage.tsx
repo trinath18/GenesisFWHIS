@@ -319,7 +319,7 @@ export function CaseRegistrationPage({ mode = 'register' }: { mode?: 'register' 
         {member && <LegacyFrame title="Member management note"><CaseManagementNote memberNumber={member.memberNumber} area={area} /></LegacyFrame>}
       </Box>
     ),
-    lg: () => (adjusted ? <CaseLgTab caseNumber={adjusted.no} lgAmount={f.lg ? Number(f.lg) : null} /> : null),
+    lg: () => (adjusted ? <CaseLgTab key={adjusted.no} caseNumber={adjusted.no} lgAmount={f.lg ? Number(f.lg) : null} /> : null),
     worksheet: () => (adjusted ? <CaseWorksheetTab caseNumber={adjusted.no} /> : null),
   }
   const isMember = (t: TabKey): t is MemberTab => [...memberTabs, ...memberTabsAfterNotes].some(([k]) => k === t)
@@ -398,7 +398,7 @@ export function CaseRegistrationPage({ mode = 'register' }: { mode?: 'register' 
       <CaseSearchDialog open={searching} onClose={() => setSearching(false)} onPick={(no, item) => { setSearching(false); if (adjust) load.mutate(no); else { setNumber(item.memberNumber); show.mutate(item.memberNumber) } }} />
       <Dialog open={lgOpen} onClose={() => setLgOpen(false)} maxWidth="lg" fullWidth>
         <DialogTitle>Guarantee letters {savedCase}</DialogTitle>
-        <DialogContent>{savedCase && <CaseLgTab caseNumber={savedCase} lgAmount={f.lg ? Number(f.lg) : null} />}</DialogContent>
+        <DialogContent>{savedCase && <CaseLgTab key={savedCase} caseNumber={savedCase} lgAmount={f.lg ? Number(f.lg) : null} />}</DialogContent>
         <DialogActions><Button onClick={() => setLgOpen(false)}>Close</Button></DialogActions>
       </Dialog>
       <Dialog open={confirming} onClose={() => setConfirming(false)}><DialogTitle>{adjust ? 'Update case' : 'Register case'}</DialogTitle><DialogContent><DialogContentText>Are you sure?</DialogContentText></DialogContent>

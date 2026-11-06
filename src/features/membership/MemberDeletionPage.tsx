@@ -1,4 +1,4 @@
-﻿import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { deletionApi, type DeletionCriteria } from '../../api/deletion'
@@ -70,7 +70,7 @@ export function MemberDeletionPage() {
               <TableHead><TableRow>{['Bordx date', 'Batch', 'Member No', 'Name', 'Type', 'Covered persons', 'Status'].map((h) => <TableCell key={h}>{h}</TableCell>)}</TableRow></TableHead>
               <TableBody>
                 {data.candidates.map((m) => (
-                  <TableRow key={m.memberNumber} hover sx={m.blockedReason ? { bgcolor: 'error.50' } : undefined}>
+                  <TableRow key={m.memberNumber} hover sx={m.blockedReason ? { bgcolor: 'legacy.dangerRow' } : undefined}>
                     <TableCell>{formatDate(m.bordxDate)}</TableCell><TableCell>{m.batchNo}</TableCell><TableCell>{m.memberNumber}</TableCell><TableCell>{m.name}</TableCell>
                     <TableCell>{m.memberType}</TableCell><TableCell>{m.insurer === 'F' || m.insurer === 'H' ? m.coveredPersons : 0}</TableCell>
                     <TableCell>{m.blockedReason ? <Typography color="error" variant="body2">Cannot delete: {m.blockedReason}</Typography> : 'Can be deleted'}</TableCell>

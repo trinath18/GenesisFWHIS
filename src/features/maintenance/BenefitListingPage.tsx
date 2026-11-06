@@ -1,9 +1,10 @@
-﻿import { Alert, Box, Button, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { benefitApi } from '../../api/benefits'
 import { DateField } from '../../components/DateField'
 import { toDmy } from '../../lib/dates'
+import { LegacyEm } from '../../components/LegacyForm'
 
 /** Legacy: Maintenance > Benefits > Benefits Listing: search the stored benefits by health, insured, plan, date, sub category, payor or group company. */
 export function BenefitListingPage() {
@@ -40,7 +41,7 @@ export function BenefitListingPage() {
           </TableBody>
         </Table>
       </TableContainer>
-      <Typography variant="body2"><strong style={{ color: '#c62828' }}>TOTAL RECORDS</strong> {rows.length}{rows.length === 2000 ? ' (first 2,000 shown; narrow the search)' : ''}</Typography>
+      <Typography variant="body2"><LegacyEm>TOTAL RECORDS</LegacyEm> {rows.length}{rows.length === 2000 ? ' (first 2,000 shown; narrow the search)' : ''}</Typography>
     </Box>
   )
 }

@@ -1,4 +1,4 @@
-﻿import { Alert, Box, Button, Checkbox, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, Checkbox, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { mcoApi, mcoDateCorrectionApi, type McoCorrectionListing, type McoDateFilter } from '../../api/mco'
@@ -6,6 +6,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { DateField } from '../../components/DateField'
 import { toDmy } from '../../lib/dates'
 import { formatMoney } from '../../lib/format'
+import { LegacyEm } from '../../components/LegacyForm'
 
 const empty = { payor: '', memberFrom: '', memberTo: '', bordxFrom: '', bordxTo: '', batchFrom: '', batchTo: '', invoiceFrom: '', invoiceTo: '', invoiceDate: '', batchNo: '' }
 const num = (s: string) => (s.trim() === '' ? null : Number(s))
@@ -66,7 +67,7 @@ export function McoDateCorrectionPage() {
           </TableBody>
         </Table>
       </TableContainer>
-      <Typography variant="body2"><strong style={{ color: '#c62828' }}>Records</strong> {listing?.rows.length ?? 0}{listing?.truncated ? ' (first 2,000 shown; narrow the search)' : ''}. Only rows that already have an invoice number can be selected.</Typography>
+      <Typography variant="body2"><LegacyEm>Records</LegacyEm> {listing?.rows.length ?? 0}{listing?.truncated ? ' (first 2,000 shown; narrow the search)' : ''}. Only rows that already have an invoice number can be selected.</Typography>
       <ConfirmDialog open={confirming} busy={update.isPending} title="Update invoice date" message={`Do you want to set the invoice date of ${checked.size} record(s) to ${toDmy(f.invoiceDate)}${f.batchNo.trim() ? ` and the batch number to ${f.batchNo}` : ''}?`} onConfirm={() => update.mutate()} onCancel={() => setConfirming(false)} />
     </Box>
   )

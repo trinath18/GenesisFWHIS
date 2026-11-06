@@ -1,4 +1,5 @@
 import { Alert, Box, Button, Checkbox, FormControlLabel, MenuItem, Paper, Tab, Tabs, TextField, Typography } from '@mui/material'
+import { LegacyTitle } from '../../components/LegacyForm'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -18,7 +19,7 @@ const empty: Fields = {
   postCode: null, city: null, state: null, paymentMode: null, attention: null, gpName: null, lastDocDate: null,
 }
 const text = (v: string | null | undefined) => (v == null || v.trim() === '' ? null : v.trim())
-const yellow = { '& .MuiInputBase-root': { bgcolor: '#fff9c4' } }
+const yellow = { '& .MuiInputBase-root': { bgcolor: 'legacy.readOnly' } }
 
 /** Label on the left, box on the right, as on the legacy form. */
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -98,7 +99,7 @@ export function WorksheetForm({ screen, title, caseNo, setCaseNo, onGo, loading,
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: 1 }}>
-      <Paper square sx={{ bgcolor: 'grey.800', color: 'common.white', py: 0.5, textAlign: 'center' }}><Typography sx={{ fontWeight: 700 }}>{title}</Typography></Paper>
+      <LegacyTitle>{title}</LegacyTitle>
 
       <Paper variant="outlined" sx={{ p: 1, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
         <Typography variant="body2">Case Num</Typography>

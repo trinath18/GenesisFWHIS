@@ -1,4 +1,4 @@
-﻿import { Alert, Box, Button, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { fwhsInvoiceApi, mcoApi, type FwhsInvoiceListing } from '../../api/mco'
@@ -6,6 +6,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { DateField } from '../../components/DateField'
 import { toDmy } from '../../lib/dates'
 import { formatMoney } from '../../lib/format'
+import { LegacyEm } from '../../components/LegacyForm'
 
 const titles: Record<string, string> = { none: 'FWHS MCO Fee', gst: 'FWHS MCO Fee (GST 6%)', sst: 'FWHS MCO Fee (SST)' }
 
@@ -57,7 +58,7 @@ export function FwhsInvoicePage({ tax }: { tax: 'none' | 'gst' | 'sst' }) {
           </TableBody>
         </Table>
       </TableContainer>
-      <Typography variant="body2">{listing ? `${listing.payorName} - billing by ${listing.billingMode === 'I' ? 'policy / endorsement date' : 'submission date'}. ` : ''}<strong style={{ color: '#c62828' }}>TOTAL</strong> workers {listing?.totalWorkers ?? 0}, fee {formatMoney(listing?.totalFee ?? 0)}, tax {formatMoney(listing?.totalTax ?? 0)}, total {formatMoney(listing?.total ?? 0)} &nbsp; <strong style={{ color: '#c62828' }}>RECORDS</strong> {listing?.rows.length ?? 0}{listing?.truncated ? ' (first 2,000 shown)' : ''}</Typography>
+      <Typography variant="body2">{listing ? `${listing.payorName} - billing by ${listing.billingMode === 'I' ? 'policy / endorsement date' : 'submission date'}. ` : ''}<LegacyEm>TOTAL</LegacyEm> workers {listing?.totalWorkers ?? 0}, fee {formatMoney(listing?.totalFee ?? 0)}, tax {formatMoney(listing?.totalTax ?? 0)}, total {formatMoney(listing?.total ?? 0)} &nbsp; <LegacyEm>RECORDS</LegacyEm> {listing?.rows.length ?? 0}{listing?.truncated ? ' (first 2,000 shown)' : ''}</Typography>
       <ConfirmDialog open={confirming} busy={print.isPending} title="Print new invoice" message={`Do you want to create a new invoice for ${q.payor} from ${toDmy(q.from)} to ${toDmy(q.to)}? The next invoice number is stamped on the ${listing?.rows.length ?? 0} listed fee row(s).`} onConfirm={() => print.mutate()} onCancel={() => setConfirming(false)} />
     </Box>
   )

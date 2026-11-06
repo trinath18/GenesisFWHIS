@@ -1,4 +1,4 @@
-﻿import { Alert, Box, Button, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { mcoReinstatementApi, type McoReinstatementListing, type McoReinstatementQuery } from '../../api/mco'
@@ -6,6 +6,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { DateField } from '../../components/DateField'
 import { toDmy } from '../../lib/dates'
 import { formatMoney } from '../../lib/format'
+import { LegacyEm } from '../../components/LegacyForm'
 
 const empty: McoReinstatementQuery = { mode: 'batch', payor: '', bordxDate: '', batchNo: '', invoiceNo: '' }
 
@@ -54,7 +55,7 @@ export function McoReinstatementPage() {
           </TableBody>
         </Table>
       </TableContainer>
-      <Typography variant="body2"><strong style={{ color: '#c62828' }}>Total Principal</strong> {listing?.totalPrincipal ?? 0} &nbsp; <strong style={{ color: '#c62828' }}>Total Supp</strong> {listing?.totalSupplementary ?? 0} &nbsp; <strong style={{ color: '#c62828' }}>Reinstatement MCO Fees</strong> {formatMoney(listing?.totalFee ?? 0)}{listing?.invoiced ? ' - already invoiced; reprint it by invoice number' : ''}</Typography>
+      <Typography variant="body2"><LegacyEm>Total Principal</LegacyEm> {listing?.totalPrincipal ?? 0} &nbsp; <LegacyEm>Total Supp</LegacyEm> {listing?.totalSupplementary ?? 0} &nbsp; <LegacyEm>Reinstatement MCO Fees</LegacyEm> {formatMoney(listing?.totalFee ?? 0)}{listing?.invoiced ? ' - already invoiced; reprint it by invoice number' : ''}</Typography>
       <ConfirmDialog open={confirming} busy={print.isPending} title="Print invoice" message={`Do you want to create the MCO reinstatement invoice for ${listing?.rows.length ?? 0} row(s)? The next invoice number is stamped on all of them.`} onConfirm={() => print.mutate()} onCancel={() => setConfirming(false)} />
     </Box>
   )

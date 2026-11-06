@@ -1,4 +1,4 @@
-﻿import { Alert, Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { mcoReceiptApi, type McoReceiptRow } from '../../api/mco'
@@ -6,6 +6,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { DateField } from '../../components/DateField'
 import { toDmy } from '../../lib/dates'
 import { formatMoney } from '../../lib/format'
+import { LegacyEm } from '../../components/LegacyForm'
 
 const types: [string, string][] = [['M', 'M - MCO FEES'], ['A', 'A - Others'], ['C', 'C - Client'], ['F', 'F - Fine'], ['O', 'O - Others']]
 const defaultAccount: Record<string, string> = { F: '6720', C: '2040' }
@@ -96,7 +97,7 @@ export function McoReceiptPage({ manual }: { manual: boolean }) {
           </>) : <TableBody><TableRow><TableCell>{isM ? 'Search invoices to receipt, or find existing receipts.' : 'Enter the receipt and Save, or find existing receipts.'}</TableCell></TableRow></TableBody>}
         </Table>
       </TableContainer>
-      <Typography variant="body2">{isM && found ? <><strong style={{ color: '#c62828' }}>Selected net</strong> {formatMoney(net)} &nbsp; <strong style={{ color: '#c62828' }}>Receipt amount</strong> {formatMoney(Number(h.amount || 0))} &nbsp; <strong style={{ color: '#c62828' }}>Difference</strong> {formatMoney(Number(h.amount || 0) - net)}</> : existing ? <><strong style={{ color: '#c62828' }}>Total Amt</strong> {formatMoney(existing.totalAmount)} &nbsp; <strong style={{ color: '#c62828' }}>Records</strong> {existing.rows.length}</> : ''}</Typography>
+      <Typography variant="body2">{isM && found ? <><LegacyEm>Selected net</LegacyEm> {formatMoney(net)} &nbsp; <LegacyEm>Receipt amount</LegacyEm> {formatMoney(Number(h.amount || 0))} &nbsp; <LegacyEm>Difference</LegacyEm> {formatMoney(Number(h.amount || 0) - net)}</> : existing ? <><LegacyEm>Total Amt</LegacyEm> {formatMoney(existing.totalAmount)} &nbsp; <LegacyEm>Records</LegacyEm> {existing.rows.length}</> : ''}</Typography>
       <ConfirmDialog open={confirm === 'save'} busy={save.isPending} title="Save receipt" message={`Do you want to save the record?${isM ? ` ${checked.size} invoice(s), net ${formatMoney(net)}.` : ''}`} onConfirm={() => save.mutate()} onCancel={() => setConfirm(null)} />
       <ConfirmDialog open={!!confirm && confirm !== 'save'} busy={remove.isPending} title="Delete record" message="Do you want to delete this record?" onConfirm={() => remove.mutate((confirm as { del: McoReceiptRow }).del)} onCancel={() => setConfirm(null)} />
       <Dialog open={!!edit} onClose={() => setEdit(null)}><DialogTitle>Edit receipt {edit?.receiptNo}</DialogTitle>

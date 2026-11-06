@@ -9,6 +9,7 @@ import { download } from '../../lib/download'
 import { formatDate, formatMoney } from '../../lib/format'
 import { toggleIn } from '../../lib/sets'
 import { CodeSelect, DateRange, TickTable, type TickColumn } from './SendToShared'
+import { LegacyEm } from '../../components/LegacyForm'
 
 const empty = {
   caseNoFrom: '', caseNoTo: '', scan: true, caseStatus: '2', claimability: '', department: '', passedBy: '', versionFrom: '', versionTo: '',
@@ -146,7 +147,7 @@ export function SendToClaimsPage({ kind }: { kind: SendToClaimsKind }) {
         <Button variant="outlined" onClick={() => { setC(empty); setRows([]); setChecked(new Set()); setMessage(null); setTruncated(false); setPassOut('') }}>Clear</Button>
       </Box>
       <TickTable rows={rows} rowKey={key} columns={cols} checked={checked} onToggle={toggle} empty="Enter the criteria and Search." />
-      <Typography variant="body2"><strong style={{ color: '#c62828' }}>Records</strong> {rows.length}{truncated ? ' (first 3,000 shown; narrow the search)' : ''} · {checked.size} ticked
+      <Typography variant="body2"><LegacyEm>Records</LegacyEm> {rows.length}{truncated ? ' (first 3,000 shown; narrow the search)' : ''} · {checked.size} ticked
         {rep && rows.some((r) => r.cannotPass) ? ' · rows without registration, admission or discharge date or hospital, or already sent, cannot be ticked' : ''}</Typography>
       <ConfirmDialog open={confirming} busy={pass.isPending} title="Pass to Claim"
         message={rep ? `Do you want to update the record? ${checked.size} case(s) will be passed to Claims with today's date in a new batch.` : `Do you want to update the record? ${checked.size} claim version(s) will be passed to Claims with pass-out date ${formatDate(passOut)}.`}

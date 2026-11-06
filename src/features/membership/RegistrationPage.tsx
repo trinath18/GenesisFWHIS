@@ -1,4 +1,4 @@
-﻿import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { registrationApi, type RegistrationQuote, type RegistrationRequest, type RegistrationSupplementary } from '../../api/registration'
@@ -92,7 +92,7 @@ export function RegistrationPage() {
     return (
       <Box sx={{ maxWidth: 560, mx: 'auto', mt: 4 }}>
         <Paper variant="outlined" sx={{ p: 0 }}>
-          <Typography variant="subtitle1" sx={{ bgcolor: 'grey.800', color: 'common.white', textAlign: 'center', py: 0.5, fontWeight: 700 }}>Membership Header</Typography>
+          <Typography variant="subtitle1" sx={{ bgcolor: 'legacy.titleBar', color: 'legacy.titleBarText', textAlign: 'center', py: 0.5, fontWeight: 700, borderRadius: 1 }}>Membership Header</Typography>
           <Box sx={{ p: 2, display: 'grid', gap: 1.5 }}>
             {message && <Alert severity={message.severity} onClose={() => setMessage(null)}>{message.text}</Alert>}
             <TextField select size="small" label="Health Type" value={health} onChange={(e) => { setHeader((h) => ({ ...h, health: e.target.value, payor: '' })); setLastBatch(0) }}>

@@ -1,6 +1,7 @@
-﻿import { AppBar, Box, Button, Drawer, List, ListItemButton, ListItemText, Toolbar, Typography } from '@mui/material'
+import { AppBar, Box, Button, Drawer, List, ListItemButton, ListItemText, Toolbar, Typography } from '@mui/material'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { ThemeSwitcher } from '../theme/ThemeSwitcher'
 import { MenuTree } from './MenuTree'
 
 const drawerWidth = 280
@@ -12,8 +13,9 @@ export function AppShell() {
     <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       <AppBar position="fixed" sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
         <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>Genesis FIS</Typography>
-          <Typography variant="body2" sx={{ mr: 2 }}>{user?.name}</Typography>
+          <Typography variant="h6" sx={{ flexGrow: 1, letterSpacing: 0.4 }}>Genesis FIS</Typography>
+          <ThemeSwitcher />
+          <Typography variant="body2" sx={{ mr: 2, opacity: 0.92 }}>{user?.name}</Typography>
           <Button color="inherit" onClick={logout}>Logout</Button>
         </Toolbar>
       </AppBar>
@@ -26,7 +28,7 @@ export function AppShell() {
       </Drawer>
       <Box component="main" sx={{ flexGrow: 1, minWidth: 0, height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <Toolbar />
-        <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: 2 }}>
+        <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: 2, bgcolor: 'background.default' }}>
           <Outlet />
         </Box>
       </Box>

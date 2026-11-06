@@ -2,6 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { caseAdjustmentTabsApi, type CaseWorksheetItem } from '../../api/caseRegistration'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { DateField } from '../../components/DateField'
 import { toDmy } from '../../lib/dates'
 import { download } from '../../lib/download'
@@ -18,7 +19,9 @@ export function CaseLgTab({ caseNumber, lgAmount }: { caseNumber: string; lgAmou
   const [message, setMessage] = useState<{ severity: 'success' | 'error'; text: string } | null>(null)
   const done = (text: string) => { setMessage({ severity: 'success', text }); qc.invalidateQueries({ queryKey: ['adj-lg', caseNumber] }) }
   const fail = (e: unknown) => setMessage({ severity: 'error', text: (e as Error).message })
-  const issue = useMutation({ mutationFn: () => caseAdjustmentTabsApi.issueLg(caseNumber, { amount: amount ? Number(amount) : null, time: time || null, remark: remark || null }), onSuccess: (r) => done(`Guarantee letter ${r.lgNumber} issued for ${formatMoney(r.amount)} (balance before ${formatMoney(r.balance)}).`), onError: fail })
+  // Legacy cmdLG_Click asked "Are you sure?" and then disabled the button, so one visit issues at most one LG.
+  const [confirming, setConfirming] = useState(false)
+  const issue = useMutation({ mutationFn: () => caseAdjustmentTabsApi.issueLg(caseNumber, { amount: amount ? Number(amount) : null, time: time || null, remark: remark || null }), onSettled: () => setConfirming(false), onSuccess: (r) => done(`Guarantee letter ${r.lgNumber} issued for ${formatMoney(r.amount)} (balance before ${formatMoney(r.balance)}).`), onError: fail })
   const save = useMutation({ mutationFn: () => caseAdjustmentTabsApi.lgRemark(caseNumber, editing!.no, editing!.text), onSuccess: () => { setEditing(null); done('Remark updated.') }, onError: fail })
   const print = async (no: number, number: string) => { try { download(await caseAdjustmentTabsApi.lgLetter(caseNumber, no), `${number}.pdf`) } catch (e) { fail(e) } }
 
@@ -29,7 +32,8 @@ export function CaseLgTab({ caseNumber, lgAmount }: { caseNumber: string; lgAmou
         <TextField size="small" type="number" label="LG Amount" value={amount} onChange={(e) => setAmount(e.target.value)} sx={{ width: 150 }} />
         <TextField size="small" label="LG Time (hh:mm)" value={time} onChange={(e) => setTime(e.target.value)} sx={{ width: 150 }} slotProps={{ htmlInput: { maxLength: 5 } }} />
         <TextField size="small" label="LG Remark" value={remark} onChange={(e) => setRemark(e.target.value)} sx={{ width: 280 }} slotProps={{ htmlInput: { maxLength: 100 } }} />
-        <Button variant="contained" disabled={issue.isPending || !amount || !time} onClick={() => { setMessage(null); issue.mutate() }}>Issue LG</Button>
+        <Button variant="contained" disabled={issue.isPending || issue.isSuccess || !amount || !time} onClick={() => { setMessage(null); setConfirming(true) }}>Issue LG</Button>
+        <ConfirmDialog open={confirming} busy={issue.isPending} title="Issue LG" message="Are you sure?" onConfirm={() => issue.mutate()} onCancel={() => setConfirming(false)} />
       </Box>
       <Table size="small">
         <TableHead><TableRow>{['LG No', 'Date', 'Amount', 'Patient', 'Admitted', 'Hospital', 'Issued by', 'Remark', 'Time', ''].map((h) => <TableCell key={h}>{h}</TableCell>)}</TableRow></TableHead>

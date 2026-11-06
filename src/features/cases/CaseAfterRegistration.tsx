@@ -2,6 +2,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { caseRegistrationApi } from '../../api/caseRegistration'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { download } from '../../lib/download'
 import { formatMoney } from '../../lib/format'
 
@@ -14,8 +15,11 @@ export function CaseAfterRegistration({ caseNumber, letters, lgAmount, lgTime, o
   const [remark, setRemark] = useState('')
   const [lgLetter, setLgLetter] = useState<string | null>(null)
   const [message, setMessage] = useState<{ severity: 'success' | 'error'; text: string } | null>(null)
+  // Legacy cmdLG_Click asked "Are you sure?" and then disabled the button, so one visit issues at most one LG.
+  const [confirming, setConfirming] = useState(false)
   const issue = useMutation({
     mutationFn: () => caseRegistrationApi.issueLg(caseNumber, { amount: amount ? Number(amount) : null, time: time || null, remark: remark || null }),
+    onSettled: () => setConfirming(false),
     onSuccess: (r) => { setLgLetter(r.letter === 'B' ? 'btbg' : 'lg'); setMessage({ severity: 'success', text: `Guarantee letter ${r.lgNumber} issued for ${formatMoney(r.amount)} (balance before ${formatMoney(r.balance)}).` }) },
     onError: (e) => setMessage({ severity: 'error', text: (e as Error).message }),
   })
@@ -30,8 +34,9 @@ export function CaseAfterRegistration({ caseNumber, letters, lgAmount, lgTime, o
         <TextField size="small" type="number" label="LG Amount" value={amount} onChange={(e) => setAmount(e.target.value)} sx={{ width: 150 }} />
         <TextField size="small" label="LG Time (hh:mm)" value={time} onChange={(e) => setTime(e.target.value)} sx={{ width: 150 }} slotProps={{ htmlInput: { maxLength: 5 } }} />
         <TextField size="small" label="LG Remark" value={remark} onChange={(e) => setRemark(e.target.value)} sx={{ width: 280 }} slotProps={{ htmlInput: { maxLength: 100 } }} />
-        <Button variant="contained" disabled={issue.isPending || !amount || !time} onClick={() => { setMessage(null); issue.mutate() }}>Issue LG</Button>
+        <Button variant="contained" disabled={issue.isPending || issue.isSuccess || !amount || !time} onClick={() => { setMessage(null); setConfirming(true) }}>Issue LG</Button>
       </Box>
+      <ConfirmDialog open={confirming} busy={issue.isPending} title="Issue LG" message="Are you sure?" onConfirm={() => issue.mutate()} onCancel={() => setConfirming(false)} />
       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
         {all.map((k) => <Button key={k} variant="outlined" onClick={() => print(k)}>{names[k] ?? k}</Button>)}
         {all.length === 0 && <Typography variant="body2" color="text.secondary">No letters are due for this case.</Typography>}

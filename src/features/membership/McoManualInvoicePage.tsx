@@ -1,4 +1,4 @@
-﻿import { Alert, Box, Button, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { mcoApi, mcoManualApi, type McoManualFilter, type McoManualListing } from '../../api/mco'
@@ -6,6 +6,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { DateField } from '../../components/DateField'
 import { toDmy } from '../../lib/dates'
 import { formatMoney } from '../../lib/format'
+import { LegacyEm } from '../../components/LegacyForm'
 
 const empty = { payor: '', memberFrom: '', memberTo: '', bordxFrom: '', bordxTo: '', batchFrom: '', batchTo: '', invoiceNo: '', invoiceDate: '' }
 const num = (s: string) => (s.trim() === '' ? null : Number(s))
@@ -58,7 +59,7 @@ export function McoManualInvoicePage() {
           </TableBody>
         </Table>
       </TableContainer>
-      <Typography variant="body2"><strong style={{ color: '#c62828' }}>Total MCO Amt</strong> {formatMoney(listing?.totalMco ?? 0)} &nbsp; <strong style={{ color: '#c62828' }}>Records</strong> {listing?.rows.length ?? 0}{listing?.truncated ? ' (more than 5,000 match; narrow the search)' : ''}</Typography>
+      <Typography variant="body2"><LegacyEm>Total MCO Amt</LegacyEm> {formatMoney(listing?.totalMco ?? 0)} &nbsp; <LegacyEm>Records</LegacyEm> {listing?.rows.length ?? 0}{listing?.truncated ? ' (more than 5,000 match; narrow the search)' : ''}</Typography>
       <ConfirmDialog open={confirming} busy={update.isPending} title="Update invoice" message={`Do you want to stamp invoice ${f.invoiceNo} (${toDmy(f.invoiceDate)}) on ${listing?.rows.length ?? 0} record(s)?`} onConfirm={() => update.mutate()} onCancel={() => setConfirming(false)} />
     </Box>
   )

@@ -1,9 +1,10 @@
-﻿import { Alert, Box, Button, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { benefitApi, type BenefitLine } from '../../api/benefits'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { DateField } from '../../components/DateField'
+import { LegacyEm } from '../../components/LegacyForm'
 
 const hasValue = (l: BenefitLine) => l.days !== null || !!l.amount?.trim() || !!l.perDisability?.trim()
 
@@ -72,7 +73,7 @@ export function BenefitEntryPage() {
         </Table>
       </TableContainer>
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-        <Typography variant="body2" sx={{ flexGrow: 1 }}>Bold - Searchable &nbsp; * - Mandatory Fields &nbsp;&nbsp; <strong style={{ color: '#c62828' }}>TOTAL RECORDS</strong> {total}</Typography>
+        <Typography variant="body2" sx={{ flexGrow: 1 }}>Bold - Searchable &nbsp; * - Mandatory Fields &nbsp;&nbsp; <LegacyEm>TOTAL RECORDS</LegacyEm> {total}</Typography>
         <Button variant="outlined" disabled={!complete() || search.isPending} onClick={() => { setMessage(null); search.mutate() }}>Search</Button>
         <Button variant="contained" disabled={!lines || !complete() || save.isPending} onClick={() => { setMessage(null); setConfirm('save') }}>Save</Button>
         <Button color="error" variant="outlined" disabled={!exists || remove.isPending} onClick={() => setConfirm('delete')}>Delete</Button>

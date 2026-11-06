@@ -61,7 +61,7 @@ export function WorksheetLegacyGrid({ lines, daysAtLimit, totals, typed, onType,
                     <InputBase value={typed?.[l.row] ?? ''} placeholder={blank(l.limit)} onChange={(e) => onType(l.row, e.target.value)}
                       onBlur={() => onCommit?.()} onKeyDown={(e) => { if (e.key === 'Enter') onCommit?.() }}
                       inputProps={{ maxLength: 15, style: { textAlign: 'right', fontSize: 13, padding: '2px 6px' }, 'aria-label': `Limit ${l.label}` }}
-                      sx={{ width: '100%', bgcolor: typed?.[l.row] ? 'warning.light' : undefined, '& input::placeholder': { opacity: 1, color: 'text.primary' } }} />
+                      sx={{ width: '100%', bgcolor: typed?.[l.row] ? 'legacy.highlight' : undefined, '& input::placeholder': { opacity: 1, color: 'text.primary' } }} />
                   ) : blank(l.limit)}
                 </TableCell>
                 <TableCell sx={cell} align="right">{blank(l.actual)}</TableCell>

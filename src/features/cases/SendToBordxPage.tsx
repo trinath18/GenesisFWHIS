@@ -10,6 +10,7 @@ import { download } from '../../lib/download'
 import { formatDate, formatMoney } from '../../lib/format'
 import { toggleIn } from '../../lib/sets'
 import { CodeSelect, DateRange, TickTable, type TickColumn } from './SendToShared'
+import { LegacyEm } from '../../components/LegacyForm'
 
 const empty = {
   caseNoFrom: '', caseNoTo: '', scan: true, bordxFrom: '', bordxTo: '', versionFrom: '', versionTo: '', caseStatus: '', claimability: '', department: '', passedBy: '', payor: '', stayType: '', cashType: '',
@@ -141,7 +142,7 @@ export function SendToBordxPage() {
         <Button variant="outlined" onClick={() => { setC(empty); setRows([]); setChecked(new Set()); setSelected(null); setMessage(null); setTruncated(false) }}>Clear</Button>
       </Box>
       <TickTable rows={rows} rowKey={key} columns={columns} checked={checked} onToggle={(k) => setChecked(toggleIn(k))} selected={selected} onSelect={setSelected} empty="Enter the criteria and Search." />
-      <Typography variant="body2"><strong style={{ color: '#c62828' }}>Records</strong> {rows.length}{truncated ? ' (first 3,000 shown; narrow the search)' : ''} · {checked.size} ticked</Typography>
+      <Typography variant="body2"><LegacyEm>Records</LegacyEm> {rows.length}{truncated ? ' (first 3,000 shown; narrow the search)' : ''} · {checked.size} ticked</Typography>
       <ConfirmDialog open={confirming} busy={pass.isPending} title="Pass to Bordx Unit" message={`Do you want to update the record? ${checked.size} claim version(s) will be passed to the Bordx Unit with today's DPO in a new batch.`} onConfirm={() => pass.mutate()} onCancel={() => setConfirming(false)} />
       <Dialog open={!!amending} onClose={() => setAmending(null)}>
         <DialogTitle>Amend DPO - {amending?.row.caseNumber} v{amending?.row.version}</DialogTitle>

@@ -1,10 +1,21 @@
-import { Box, Paper, Typography, type SxProps, type Theme } from '@mui/material'
+import { alpha, Box, Paper, Typography, type SxProps, type Theme } from '@mui/material'
 import type { ReactNode } from 'react'
 
 
 /** The dark title bar across the top of a legacy form. */
 export function LegacyTitle({ children }: { children: ReactNode }) {
-  return <Paper square sx={{ bgcolor: 'grey.800', color: 'common.white', py: 0.5, textAlign: 'center' }}><Typography sx={{ fontWeight: 700 }}>{children}</Typography></Paper>
+  return (
+    <Paper square elevation={0} sx={(t) => ({
+      bgcolor: 'legacy.titleBar', color: 'legacy.titleBarText', py: 0.5, textAlign: 'center', borderRadius: 1,
+      backgroundImage: `linear-gradient(180deg, ${alpha('#fff', 0.08)}, ${alpha('#000', 0.12)})`,
+      boxShadow: `0 1px 2px ${alpha(t.palette.common.black, 0.2)}`,
+    })}><Typography sx={{ fontWeight: 700, letterSpacing: 0.3 }}>{children}</Typography></Paper>
+  )
+}
+
+/** Red emphasised label of the legacy forms ("TOTAL RECORDS", "Records"); themed so it stays readable in dark mode. */
+export function LegacyEm({ children }: { children: ReactNode }) {
+  return <Box component="strong" sx={{ color: 'legacy.emphasis' }}>{children}</Box>
 }
 
 /** A label and its box(es) on one line. */

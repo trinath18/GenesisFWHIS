@@ -1,4 +1,5 @@
 import { Alert, Autocomplete, Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Tab, Tabs, TextField, Typography } from '@mui/material'
+import { LegacyTitle } from '../../components/LegacyForm'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -38,8 +39,8 @@ function fromEntry(e: InvoiceEntry, fields: InvoiceField[]): Form {
 }
 
 const box = { '& .MuiInputBase-input': { py: 0.4, px: 0.75, fontSize: 13 } } as const
-const yellow = { ...box, '& .MuiInputBase-root': { bgcolor: '#fff9c4' } } as const
-const cyan = { ...box, '& .MuiInputBase-root': { bgcolor: '#c8f4fb' } } as const
+const yellow = { ...box, '& .MuiInputBase-root': { bgcolor: 'legacy.readOnly' } } as const
+const cyan = { ...box, '& .MuiInputBase-root': { bgcolor: 'legacy.readOnlyAlt' } } as const
 const blue = { color: 'primary.main', fontSize: 13 } as const
 
 /** A label and its box(es) on one line, as on the legacy form. */
@@ -232,7 +233,7 @@ export function InvoiceProcessingPage() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: 1 }}>
-      <Paper square sx={{ bgcolor: 'grey.800', color: 'common.white', py: 0.5, textAlign: 'center' }}><Typography sx={{ fontWeight: 700 }}>Invoice Processing</Typography></Paper>
+      <LegacyTitle>Invoice Processing</LegacyTitle>
       {message && <Alert severity={message.severity} onClose={() => setMessage(null)}>{message.text}</Alert>}
       {options.isError && <Alert severity="error">{(options.error as Error).message}</Alert>}
       {dateWarning && <Alert severity={dateWarning.blocked ? 'error' : 'warning'}>{dateWarning.text}</Alert>}

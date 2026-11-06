@@ -1,9 +1,10 @@
-﻿import { Alert, Box, Button, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { mcoApi, type McoRefundRow } from '../../api/mco'
 import { DateField } from '../../components/DateField'
 import { formatDate, formatMoney } from '../../lib/format'
+import { LegacyEm } from '../../components/LegacyForm'
 
 const empty = { payor: '', dateBy: 'effective', from: '', to: '', printStatus: 'N' }
 
@@ -56,7 +57,7 @@ export function McoRefundListingPage() {
           {supp.isSuccess && supp.data.length === 0 && <Typography variant="body2" color="text.secondary">None.</Typography>}
         </Paper>
       )}
-      <Typography variant="body2"><strong style={{ color: '#c62828' }}>Total MCO Refund</strong> {formatMoney(l?.totalRefund ?? 0)} &nbsp; <strong style={{ color: '#c62828' }}>TOTAL RECORDS</strong> {l?.rows.length ?? 0}
+      <Typography variant="body2"><LegacyEm>Total MCO Refund</LegacyEm> {formatMoney(l?.totalRefund ?? 0)} &nbsp; <LegacyEm>TOTAL RECORDS</LegacyEm> {l?.rows.length ?? 0}
         {l?.truncated ? ' (first 2,000 shown; narrow the dates)' : ''}{l?.cancelledOnly ? ' - this payor lists cancelled members entered within 30 days only' : ''}</Typography>
     </Box>
   )
