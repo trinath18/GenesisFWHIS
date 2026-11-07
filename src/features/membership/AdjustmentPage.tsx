@@ -213,7 +213,7 @@ export function AdjustmentPage() {
                 <Box>
                   <L label="Ins Type" w={95}>{ro(member.insurer, 110)}{t('Plan Code', 75)}{ro(member.plan)}</L>
                   <L label="Eff Date" w={95}>{ro(formatDate(member.payorEffectiveDate), 110)}{t('Exp Date', 75)}{ro(formatDate(member.payorExpiryDate))}</L>
-                  <L label="Final Exp Date" w={95}>{ro(formatDate(detail?.finalExpiryDate), 110)}{t('DOR', 75)}{ro(formatDate(detail?.valueDate))}</L>
+                  <L label="Final Exp Date" w={95}>{ro(formatDate(detail?.finalExpiryDate ?? member.payorExpiryDate), 110)}{t('DOR', 75)}{ro(formatDate(detail?.valueDate))}</L>
                   <L label="Bordx. Date" w={95}>{ro(formatDate(detail?.bordxDate), 110)}{t('Batch Num', 75)}{ro(member.batchNo?.toString())}</L>
                   <L label="Pol. Year" w={95}>{ro(detail?.policyYear, 110)}</L>
                   <L label="Grp. Company" w={95}>{ro(detail?.groupCompany)}</L>
