@@ -1,4 +1,4 @@
-import { Alert, Autocomplete, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { registrationApi, type RegistrationQuote, type RegistrationRequest, type RegistrationSupplementary } from '../../api/registration'
@@ -8,6 +8,8 @@ import { LegacyFrame, LegacyRow as L, LegacyTitle } from '../../components/Legac
 import { legacyBox } from '../../components/legacyStyles'
 import { formatDate, formatMoney } from '../../lib/format'
 import { toDmy } from '../../lib/dates'
+import { CodeSelect, PickText } from '../../components/MemberFields'
+import { codeItems, COVERED_SALUTATIONS, MARITAL_STATUSES, plainItems, PRINCIPAL_SALUTATIONS, useMemberLists } from '../../lib/memberLists'
 
 type Form = Record<'renewal' | 'prevMem' | 'prevPol' | 'takeover' | 'name' | 'salutation' | 'ic' | 'dob' | 'sex' | 'race' | 'nationality' | 'a1' | 'a2' | 'a3' | 'city' | 'state' | 'post'
   | 'email' | 'telH' | 'telM' | 'telO' | 'insurer' | 'plan' | 'policy' | 'eff' | 'exp' | 'group' | 'employee' | 'agent' | 'dept' | 'branch' | 'installment' | 'occupation' | 'work' | 'marital' | 'allergies' | 'exclusion' | 'remarks', string>
@@ -21,6 +23,7 @@ const n = (s: string) => s.trim() || null
 /** Legacy: Membership > Registration. Step 1 is the Membership Header dialog (frmMemberEntry); "Next" opens the registration screen (frmNewMBMReg05) with the header fixed. */
 export function RegistrationPage() {
   const options = useQuery({ queryKey: ['registration-options'], queryFn: registrationApi.options })
+  const lists = useMemberLists()
   const [header, setHeader] = useState({ health: '', payor: '', bordx: '', batch: '1' })
   const [lastBatch, setLastBatch] = useState(0)
   const [started, setStarted] = useState(false)
@@ -82,18 +85,14 @@ export function RegistrationPage() {
   const Sel = (k: keyof Form, items: [string, string][], w: number | string = '100%') => (
     <TextField select size="small" sx={{ ...box, width: w }} value={f[k]} onChange={setField(k)}>{items.map(([c, l]) => <MenuItem key={c} value={c}>{l}</MenuItem>)}</TextField>
   )
-  /** Pick from the list or type a value, like the legacy editable combo boxes (City/Town, State). */
-  const Pick = (k: keyof Form, list: string[], max: number, required = false) => (
-    <Autocomplete freeSolo size="small" options={list} inputValue={f[k]} onInputChange={(_, v) => setField(k)({ target: { value: v.toUpperCase().slice(0, max) } })} sx={{ width: '100%', minWidth: 0 }}
-      renderInput={(p) => <TextField {...p} sx={box} required={required} placeholder="Pick or type" />} />
+  const Pick = (k: keyof Form, list: string[] | undefined, max: number, required = false) => (
+    <PickText value={f[k]} onChange={(v) => setField(k)({ target: { value: v } })} options={list ?? []} max={max} required={required} sx={{ width: '100%', minWidth: 0 }} inputSx={box} />
   )
-  const codes = (list: { code: string; name: string | null }[] | undefined): [string, string][] => [['', ' '], ...(list ?? []).map((o): [string, string] => [o.code, `${o.code} - ${o.name ?? ''}`])]
+  const Code = (k: keyof Form, items: [string, string][], w: number | string = '100%') => <CodeSelect value={f[k]} onChange={(v) => setField(k)({ target: { value: v } })} items={items} sx={{ ...box, width: w }} />
   const D = (k: keyof Form) => <DateField sx={{ ...box, width: 140 }} value={f[k]} onChange={setDate(k)} />
   const ro = (v: string | number | null | undefined, w: number | string = '100%') => <TextField size="small" sx={{ ...box, width: w }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
   const t = (label: string, w = 85) => <Typography sx={{ fontSize: 13, width: w, flexShrink: 0, ml: 1 }}>{label}</Typography>
-  const ssel = (k: keyof Supp, label: string, items: [string, string][]) => (
-    <TextField select size="small" label={label} value={sf[k]} onChange={(e) => setSf((x) => ({ ...x, [k]: e.target.value }))}>{items.map(([c, l]) => <MenuItem key={c} value={c}>{l}</MenuItem>)}</TextField>
-  )
+  const ssel = (k: keyof Supp, label: string, items: [string, string][]) => <CodeSelect label={label} value={sf[k]} onChange={(v) => setSf((x) => ({ ...x, [k]: v }))} items={items} />
   const stext = (k: keyof Supp, label: string, max?: number) => <TextField size="small" label={label} value={sf[k]} onChange={(e) => setSf((x) => ({ ...x, [k]: e.target.value }))} slotProps={{ htmlInput: { maxLength: max } }} />
   const grid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 1.5 } as const
 
@@ -136,7 +135,7 @@ export function RegistrationPage() {
         <Typography sx={{ fontSize: 13, ml: 1 }}>Prev. Pol. Num</Typography><Box sx={{ width: 220 }}>{T('prevPol', 50, { disabled: f.renewal !== 'R' })}</Box>
       </Paper>
       <Paper variant="outlined" sx={{ p: 1, display: 'grid', gap: 0.5 }}>
-        <L label="Salutation" w={75}>{Sel('salutation', ['MR', 'MRS', 'MS', 'MISS', 'DR', 'DATO', 'DATIN', 'TAN SRI', 'PUAN'].map((v) => [v, v]), 110)}{t('Mem Name', 75)}{T('name', 60, { required: true })}{t('IC Num', 60)}<Box sx={{ width: 220, flexShrink: 0 }}>{T('ic', 30, { required: true })}</Box></L>
+        <L label="Salutation" w={75}>{Sel('salutation', plainItems(PRINCIPAL_SALUTATIONS), 110)}{t('Mem Name', 75)}{T('name', 60, { required: true })}{t('IC Num', 60)}<Box sx={{ width: 220, flexShrink: 0 }}>{T('ic', 30, { required: true })}</Box></L>
         <L label="Payor" w={75}>{ro(`${header.payor} - ${payorName}`, 260)}{t('Policy Num', 75)}{T('policy', 25, { required: true })}{t('Health Type', 75)}{ro(header.health, 80)}</L>
       </Paper>
       <Paper variant="outlined">
@@ -149,11 +148,11 @@ export function RegistrationPage() {
               <L label="Address" w={85}>{T('a1', 50, { required: true })}</L>
               <L label="" w={85}>{T('a2', 50)}</L>
               <L label="" w={85}>{T('a3', 50)}</L>
-              <L label="PostCode" w={85}><Box sx={{ width: 110, flexShrink: 0 }}>{T('post', 6, { required: true })}</Box>{t('City/Town')}{Pick('city', options.data?.cities ?? [], 50)}</L>
-              <L label="State" w={85}>{Pick('state', options.data?.states ?? [], 50, true)}</L>
+              <L label="PostCode" w={85}><Box sx={{ width: 110, flexShrink: 0 }}>{T('post', 6, { required: true })}</Box>{t('City/Town')}{Pick('city', lists.data?.cities, 50)}</L>
+              <L label="State" w={85}>{Pick('state', lists.data?.states, 50, true)}</L>
               <L label="Sex (M/F)" w={85}>{Sel('sex', [['M', 'M - Male'], ['F', 'F - Female']], 110)}{t('Take Over')}{Sel('takeover', [['N', 'N - None'], ['Y', 'Y - Take Over'], ['C', 'C - Conversion']])}</L>
-              <L label="Birthdate" w={85}>{D('dob')}{t('Marital Status')}{Sel('marital', [['', ' '], ['S', 'S - Single'], ['M', 'M - Married']])}</L>
-              <L label="Race" w={85}>{Sel('race', codes(options.data?.races), 130)}{t('Nationality')}{Sel('nationality', codes(options.data?.nationalities))}</L>
+              <L label="Birthdate" w={85}>{D('dob')}{t('Marital Status')}{Code('marital', MARITAL_STATUSES)}</L>
+              <L label="Race" w={85}>{Code('race', codeItems(lists.data?.races), 130)}{t('Nationality')}{Code('nationality', codeItems(lists.data?.nationalities))}</L>
               <L label="Branch" w={85}>{T('branch', 100)}</L>
               <L label="Agent" w={85}>{T('agent', 30)}</L>
               <L label="Age Band" w={85}>{ro(quote ? `${quote.ageCode} (${quote.ageText})` : '', 110)}{t('Instl mode')}{Sel('installment', [['A', 'A - Annual'], ['Q', 'Q - Quarterly'], ['S', 'S - Semi Annual'], ['M', 'M - Monthly']])}</L>
@@ -175,10 +174,10 @@ export function RegistrationPage() {
         <Box sx={{ p: 2, display: 'grid', gap: 2 }} hidden={tab !== 1}>
           {!insurerOk && <Alert severity="info">Supplementary persons can be added when the Ins Type is F or H (enter it on the Principal Details tab).</Alert>}
           <Box sx={grid}>
-            {ssel('salutation', 'Covered salutation', ['', 'MR', 'MS', 'MDM', 'MRS'].map((v): [string, string] => [v, v || ' ']))}{stext('name', 'Covered name', 60)}{stext('ic', 'Covered IC / passport', 30)}
+            {ssel('salutation', 'Covered salutation', plainItems(COVERED_SALUTATIONS))}{stext('name', 'Covered name', 60)}{stext('ic', 'Covered IC / passport', 30)}
             <DateField label="Covered birth date" value={sf.dob} onChange={(iso) => setSf((x) => ({ ...x, dob: iso }))} />
             <TextField select size="small" label="Covered sex" value={sf.sex} onChange={(e) => setSf((x) => ({ ...x, sex: e.target.value }))}><MenuItem value="M">M - Male</MenuItem><MenuItem value="F">F - Female</MenuItem></TextField>
-            {ssel('rel', 'Relationship', codes(options.data?.relationships))}{stext('allergies', 'Covered allergies', 500)}{stext('exclusion', 'Covered exclusion', 4000)}{stext('plan', 'Supplementary plan (if different)', 4)}
+            {ssel('rel', 'Relationship', codeItems(lists.data?.relationships))}{stext('allergies', 'Covered allergies', 500)}{stext('exclusion', 'Covered exclusion', 4000)}{stext('plan', 'Supplementary plan (if different)', 4)}
             <DateField label="Supplementary effective date" value={sf.eff} onChange={(iso) => setSf((x) => ({ ...x, eff: iso }))} /><DateField label="Supplementary expiry date" value={sf.exp} onChange={(iso) => setSf((x) => ({ ...x, exp: iso }))} />
             {stext('renew', 'Renewal discount %')}{stext('policy', 'Policy discount %')}
           </Box>

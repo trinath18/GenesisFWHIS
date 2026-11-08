@@ -12,6 +12,8 @@ import { formatDate, formatMoney } from '../../lib/format'
 import { CaseSearchDialog } from '../cases/CaseSearchDialog'
 import { WorksheetLegacyGrid } from './WorksheetLegacyGrid'
 import { legacyMoney, type WorksheetModel } from './worksheetModel'
+import { PickText } from '../../components/MemberFields'
+import { useMemberLists } from '../../lib/memberLists'
 
 type Fields = Omit<WorksheetSaveRequest, 'expectedFinalApproved' | 'limitOverrides' | 'exGratia'>
 const empty: Fields = {
@@ -54,6 +56,7 @@ export function WorksheetForm({ screen, title, caseNo, setCaseNo, onGo, loading,
   const [docError, setDocError] = useState<string | null>(null)
   const set = (patch: Partial<Fields>) => setF((x) => ({ ...x, ...patch }))
 
+  const lists = useMemberLists()
   const options = useQuery({ queryKey: ['worksheet-options', screen], queryFn: () => worksheetApi.options(screen), staleTime: 3_600_000 })
   const detail = useQuery({
     queryKey: ['worksheet-details', screen, model?.caseNumber, model?.version], enabled: !!model,
@@ -240,7 +243,7 @@ export function WorksheetForm({ screen, title, caseNo, setCaseNo, onGo, loading,
               <Row label="Add 3">{field('address3', 50)}</Row>
               <Row label="Post Code">
                 <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 50px 1fr', gap: 1, alignItems: 'center' }}>
-                  {field('postCode', 6)}<Typography variant="body2" align="center">City</Typography>{field('city', 50)}
+                  {field('postCode', 6)}<Typography variant="body2" align="center">City</Typography><PickText value={v.city ?? ''} onChange={(x) => set({ city: x })} options={lists.data?.cities ?? []} max={50} disabled={!canSave} sx={{ width: '100%', minWidth: 0 }} />
                 </Box>
               </Row>
               <Row label="State">

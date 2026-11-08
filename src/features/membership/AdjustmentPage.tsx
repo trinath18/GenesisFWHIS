@@ -9,6 +9,8 @@ import { LegacyFrame, LegacyRow as L, LegacyTitle } from '../../components/Legac
 import { legacyBox, legacyYellow } from '../../components/legacyStyles'
 import { AdjustmentHistoryTab, CoveredPersonsList, FeesTab, MemberHistoryTab, MgmtNoteTab } from './AdjustmentTabs'
 import { formatDate, formatMoney } from '../../lib/format'
+import { CodeSelect, PickText } from '../../components/MemberFields'
+import { ADJUSTMENT_SALUTATIONS, codeItems, COVERED_SALUTATIONS, plainItems, useMemberLists } from '../../lib/memberLists'
 
 type Form = Record<'name' | 'policyNo' | 'icBcPp' | 'dateOfBirth' | 'sex' | 'address1' | 'address2' | 'address3' | 'city' | 'state' | 'postCode' | 'race' | 'nationality' | 'salutation' | 'email' | 'telHome' | 'telMobile' | 'telOffice' | 'endorsementBordxDate' | 'effectiveDate' | 'batchNo', string>
 
@@ -145,6 +147,7 @@ export function AdjustmentPage() {
   const [showEdit, setShowEdit] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
+  const lists = useMemberLists()
   const overview = useQuery({ queryKey: ['adj-overview', member?.memberNumber], queryFn: () => adjustmentApi.overview(member!.memberNumber), enabled: !!member })
   const detail = overview.data?.detail
   const search = useMutation({ mutationFn: () => adjustmentApi.search(searchText), onError: (e) => setMessage({ severity: 'error', text: (e as Error).message }) })
@@ -160,6 +163,10 @@ export function AdjustmentPage() {
   }
   const box = legacyBox
   const ro = (v: string | number | null | undefined, w: number | string = '100%', sx: object = box) => <TextField size="small" sx={{ ...sx, width: w }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
+  const Pick = (k: keyof Form, list: string[] | undefined, max: number) => (
+    <PickText value={form?.[k] ?? ''} onChange={(v) => set(k)({ target: { value: v } })} options={list ?? []} max={max} sx={{ width: '100%', minWidth: 0 }} inputSx={box} />
+  )
+  const Code = (k: keyof Form, items: [string, string][], w: number | string = '100%') => <CodeSelect value={form?.[k] ?? ''} onChange={(v) => set(k)({ target: { value: v } })} items={items} sx={{ ...box, width: w }} />
   const E = (k: keyof Form, max: number, w: number | string = '100%', required = false) => <TextField size="small" sx={{ ...box, width: w }} required={required} value={form?.[k] ?? ''} onChange={set(k)} slotProps={{ htmlInput: { maxLength: max } }} />
   const ED = (k: keyof Form, w = 140) => <DateInput sx={{ ...box, width: w }} value={form?.[k] ?? ''} onChange={set(k)} />
   const t = (label: string, w = 85) => <Typography sx={{ fontSize: 13, width: w, flexShrink: 0, ml: 1 }}>{label}</Typography>
@@ -187,7 +194,7 @@ export function AdjustmentPage() {
             <L label="Endt Eff Date" w={95}>{ED('effectiveDate', 150)}{t('Endt Bordx Date')}{ED('endorsementBordxDate', 110)}{t('Data Status')}{ro(detail?.dataStatus, 90)}{t('Last Endt', 70)}{ro(detail?.endorsementDate ? formatDate(detail.endorsementDate) : '', 110)}</L>
           </Paper>
           <Paper variant="outlined" sx={{ p: 1, display: 'grid', gap: 0.5 }}>
-            <L label="Salutation" w={75}>{E('salutation', 5, 90)}{t('Mem Name', 75)}{E('name', 60, '100%', true)}{t('IC. Num', 60)}<Box sx={{ width: 220, flexShrink: 0 }}>{E('icBcPp', 30, '100%', true)}</Box></L>
+            <L label="Salutation" w={75}>{Code('salutation', plainItems(ADJUSTMENT_SALUTATIONS), 90)}{t('Mem Name', 75)}{E('name', 60, '100%', true)}{t('IC. Num', 60)}<Box sx={{ width: 220, flexShrink: 0 }}>{E('icBcPp', 30, '100%', true)}</Box></L>
             <L label="Payor" w={75}>{ro(member.payor, 90)}{t('Policy Num', 75)}{E('policyNo', 25)}{t('Hlt Type', 60)}<Box sx={{ width: 220, flexShrink: 0 }}>{ro(detail?.healthCode)}</Box></L>
           </Paper>
           <Paper variant="outlined">
@@ -200,14 +207,14 @@ export function AdjustmentPage() {
                   <L label="Address" w={85}>{E('address1', 50)}</L>
                   <L label="" w={85}>{E('address2', 50)}</L>
                   <L label="" w={85}>{E('address3', 50)}</L>
-                  <L label="PostCode" w={85}>{E('postCode', 6, 110)}{t('City/Town')}{E('city', 50)}</L>
-                  <L label="State" w={85}>{E('state', 50)}</L>
+                  <L label="PostCode" w={85}>{E('postCode', 6, 110)}{t('City/Town')}{Pick('city', lists.data?.cities, 50)}</L>
+                  <L label="State" w={85}>{Pick('state', lists.data?.states, 50)}</L>
                   <L label="Sex" w={85}>
                     <TextField select size="small" sx={{ ...box, width: 110 }} required value={form.sex} onChange={set('sex')}><MenuItem value="M">M - Male</MenuItem><MenuItem value="F">F - Female</MenuItem></TextField>
                     {t('TakeOver')}{ro(detail?.takeover)}
                   </L>
                   <L label="Birthdate" w={85}>{ED('dateOfBirth', 110)}{t('Age Band')}{ro(detail?.ageCode)}</L>
-                  <L label="Race" w={85}>{E('race', 2, 110)}{t('Nationality')}{E('nationality', 10)}</L>
+                  <L label="Race" w={85}>{Code('race', codeItems(lists.data?.races), 110)}{t('Nationality')}{Code('nationality', codeItems(lists.data?.nationalities))}</L>
                   <L label="Renewal" w={85}>{ro(detail?.renewFlag, 110)}{t('Branch')}{ro(detail?.branchCode)}</L>
                 </Box>
                 <Box>
@@ -290,11 +297,11 @@ export function AdjustmentPage() {
           <Typography variant="subtitle1">Add supplementary person</Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 1.5 }}>
             <TextField size="small" label="Covered name" value={sp.name} onChange={spSet('name')} slotProps={{ htmlInput: { maxLength: 60 } }} />
-            <TextField size="small" label="Covered salutation" value={sp.salutation} onChange={spSet('salutation')} slotProps={{ htmlInput: { maxLength: 5 } }} />
+            <CodeSelect label="Covered salutation" value={sp.salutation} onChange={(v) => spSet('salutation')({ target: { value: v } })} items={plainItems(COVERED_SALUTATIONS)} />
             <TextField size="small" label="Covered IC / passport" value={sp.ic} onChange={spSet('ic')} slotProps={{ htmlInput: { maxLength: 30 } }} />
             <DateInput label="Covered date of birth" value={sp.dob} onChange={spSet('dob')} slotProps={{ inputLabel: { shrink: true } }} />
             <TextField select size="small" label="Covered sex" value={sp.sex} onChange={spSet('sex')}><MenuItem value="M">M - Male</MenuItem><MenuItem value="F">F - Female</MenuItem></TextField>
-            <TextField size="small" label="Relationship code" value={sp.rel} onChange={spSet('rel')} slotProps={{ htmlInput: { maxLength: 1 } }} />
+            <CodeSelect label="Relationship" value={sp.rel} onChange={(v) => spSet('rel')({ target: { value: v } })} items={codeItems(lists.data?.relationships)} />
             <TextField size="small" label="Covered allergies" value={sp.allergies} onChange={spSet('allergies')} slotProps={{ htmlInput: { maxLength: 500 } }} />
             <TextField size="small" label="Covered exclusion" value={sp.exclusion} onChange={spSet('exclusion')} slotProps={{ htmlInput: { maxLength: 4000 } }} />
             <TextField size="small" label="Supplementary plan (if different)" value={sp.plan} onChange={spSet('plan')} slotProps={{ htmlInput: { maxLength: 4 } }} />
