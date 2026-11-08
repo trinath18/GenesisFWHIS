@@ -24,16 +24,16 @@ export function DateField({ value, onChange, sx, slotProps, ...rest }: Props) {
     try { input.showPicker() } catch { input.focus() }
   }
   const calendar = rest.disabled || readOnly ? undefined : (
-    <InputAdornment position="end" sx={{ ml: 0 }}>
-      <IconButton size="small" edge="end" tabIndex={-1} aria-label={typeof rest.label === 'string' ? `Choose ${rest.label}` : 'Choose date'} onClick={openCalendar} sx={{ p: 0.25 }}>
-        <CalendarMonthOutlined sx={{ fontSize: 17 }} />
+    <InputAdornment position="end" sx={{ ml: 0, mr: 0 }}>
+      <IconButton size="small" tabIndex={-1} aria-label={typeof rest.label === 'string' ? `Choose ${rest.label}` : 'Choose date'} onClick={openCalendar} sx={{ p: 0.125, mr: -0.25 }}>
+        <CalendarMonthOutlined sx={{ fontSize: 16 }} />
       </IconButton>
       <input ref={picker} type="date" tabIndex={-1} aria-hidden min="1900-01-01" value={toIso(text)} onChange={(e) => { setText(toDmy(e.target.value)); onChange(e.target.value) }}
         style={{ position: 'absolute', right: 0, bottom: 0, width: 1, height: 1, padding: 0, border: 0, opacity: 0, pointerEvents: 'none' }} />
     </InputAdornment>
   )
   return (
-    <TextField size="small" placeholder="dd/mm/yyyy" {...rest} sx={[{ flexShrink: 0, minWidth: 118, '& .MuiInputBase-adornedEnd': { pr: 0.75 } }, ...(Array.isArray(sx) ? sx : [sx])]}
+    <TextField size="small" placeholder="dd/mm/yyyy" {...rest} sx={[{ '& .MuiInputBase-adornedEnd': { pr: 0.5 } }, ...(Array.isArray(sx) ? sx : [sx]), { '& .MuiInputBase-adornedEnd .MuiInputBase-input': { pr: 0 } }]}
       value={text} error={invalid || rest.error} helperText={invalid ? 'Invalid date' : rest.helperText}
       onChange={(e) => { const m = maskDmy(e.target.value); setText(m); onChange(toIso(m)) }}
       slotProps={{ ...given, input: { ...given.input, endAdornment: calendar }, htmlInput: { ...given.htmlInput, maxLength: 10, inputMode: 'numeric' }, inputLabel: { ...given.inputLabel, shrink: true } }} />

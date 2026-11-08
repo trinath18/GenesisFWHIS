@@ -9,7 +9,6 @@ import { LegacyFrame, LegacyRow as L, LegacyTitle } from '../../components/Legac
 import { legacyBox, legacyYellow } from '../../components/legacyStyles'
 import { AdjustmentHistoryTab, CoveredPersonsList, FeesTab, MemberHistoryTab, MgmtNoteTab } from './AdjustmentTabs'
 import { formatDate, formatMoney } from '../../lib/format'
-import { dateBoxWidth } from '../../lib/dates'
 
 type Form = Record<'name' | 'policyNo' | 'icBcPp' | 'dateOfBirth' | 'sex' | 'address1' | 'address2' | 'address3' | 'city' | 'state' | 'postCode' | 'race' | 'nationality' | 'salutation' | 'email' | 'telHome' | 'telMobile' | 'telOffice' | 'endorsementBordxDate' | 'effectiveDate' | 'batchNo', string>
 
@@ -160,7 +159,7 @@ export function AdjustmentPage() {
     setTab(v)
   }
   const box = legacyBox
-  const ro = (v: string | number | null | undefined, w: number | string = '100%', sx: object = box) => <TextField size="small" sx={{ ...sx, width: w, minWidth: dateBoxWidth(v) }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
+  const ro = (v: string | number | null | undefined, w: number | string = '100%', sx: object = box) => <TextField size="small" sx={{ ...sx, width: w }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
   const E = (k: keyof Form, max: number, w: number | string = '100%', required = false) => <TextField size="small" sx={{ ...box, width: w }} required={required} value={form?.[k] ?? ''} onChange={set(k)} slotProps={{ htmlInput: { maxLength: max } }} />
   const ED = (k: keyof Form, w = 140) => <DateInput sx={{ ...box, width: w }} value={form?.[k] ?? ''} onChange={set(k)} />
   const t = (label: string, w = 85) => <Typography sx={{ fontSize: 13, width: w, flexShrink: 0, ml: 1 }}>{label}</Typography>

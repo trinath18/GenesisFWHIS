@@ -10,8 +10,6 @@ export const toDmy = (value: string | null | undefined): string => {
   return iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : ''
 }
 
-/** Minimum width of a read-only box holding a date, so a narrow row cannot cut the date off. */
-export const dateBoxWidth = (value: unknown): number | undefined => (/^\d{2}\/\d{2}\/\d{4}$/.test(String(value ?? '')) ? 92 : undefined)
 
 /** dd/mm/yyyy to yyyy-mm-dd; returns '' when the text is not a real calendar date. */
 export function toIso(dmy: string): string {

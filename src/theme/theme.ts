@@ -80,6 +80,8 @@ export function createAppTheme(mode: PaletteMode, colorTheme: ColorThemeId): The
     components: {
       MuiCssBaseline: {
         styleOverrides: {
+          // Legacy form widths (LegacyRow) grow with the page: 1px up to a 1300px window, then in step with it, at most 1.45px.
+          ':root': { '--legacy-unit': 'clamp(1px, calc((100vw - 300px) / 1000), 1.45px)' },
           body: { backgroundColor: p.background.default },
           '*::-webkit-scrollbar': { width: 10, height: 10 },
           '*::-webkit-scrollbar-thumb': { backgroundColor: alpha(p.text.primary, 0.22), borderRadius: 8, border: `2px solid ${p.background.default}` },

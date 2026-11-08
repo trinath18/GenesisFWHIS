@@ -8,11 +8,10 @@ import { legacyBox as box, legacyYellow as yellow } from '../../components/legac
 import { download, safeFileName } from '../../lib/download'
 import { formatDate, formatMoney } from '../../lib/format'
 import { MemberDetailView } from './MemberDetailView'
-import { dateBoxWidth } from '../../lib/dates'
 
 const MIN_LENGTH = 3
 const valid = /^[A-Za-z0-9*\- ]+$/
-const ro = (v: string | number | null | undefined, w: number | string = '100%', sx: object = box) => <TextField size="small" sx={{ ...sx, width: w, minWidth: dateBoxWidth(v) }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
+const ro = (v: string | number | null | undefined, w: number | string = '100%', sx: object = box) => <TextField size="small" sx={{ ...sx, width: w }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
 
 /** The Search button: members whose number starts with what is typed. */
 function MemberSearchDialog({ open, onClose, onPick }: { open: boolean; onClose: () => void; onPick: (number: string) => void }) {

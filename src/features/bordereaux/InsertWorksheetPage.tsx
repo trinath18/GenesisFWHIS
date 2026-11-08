@@ -93,7 +93,7 @@ export function InsertWorksheetPage() {
       {message && <Alert severity={message.severity} onClose={() => setMessage(null)}>{message.text}</Alert>}
 
       <LegacyFrame>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', columnGap: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(440px, 1fr))', columnGap: 2 }}>
           <LegacyRow label="Claim No" w={95}>
             <TextField size="small" sx={{ ...box, width: 130 }} value={s.claimNo} onChange={set('claimNo')} />
             <TextField size="small" sx={{ ...box, width: 50 }} value={s.version} onChange={set('version')} slotProps={{ htmlInput: { inputMode: 'numeric', 'aria-label': 'Version' } }} />

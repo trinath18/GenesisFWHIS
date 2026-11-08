@@ -1,5 +1,5 @@
 import { alpha, Box, Paper, Typography, type SxProps, type Theme } from '@mui/material'
-import type { ReactNode } from 'react'
+import { Children, cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react'
 
 
 /** The dark title bar across the top of a legacy form. */
@@ -18,11 +18,31 @@ export function LegacyEm({ children }: { children: ReactNode }) {
   return <Box component="strong" sx={{ color: 'legacy.emphasis' }}>{children}</Box>
 }
 
-/** A label and its box(es) on one line. */
+type Sized = ReactElement<{ sx?: { width?: unknown } }>
+const width = (c: ReactNode) => (isValidElement(c) && c.props && typeof c.props === 'object' && 'sx' in c.props && c.props.sx && !Array.isArray(c.props.sx) ? (c as Sized).props.sx?.width : undefined)
+
+/**
+ * A width given in the legacy form's pixels, grown with the page: --legacy-unit (set on :root by the theme) is 1px on a laptop screen and up to 1.45px on a
+ * wide one. Every box grows by the same factor, so the columns still line up row to row.
+ */
+const legacyWidth = (w: number) => `calc(${w} * var(--legacy-unit, 1px))`
+
+/**
+ * A label and its box(es) on one line. When a box fills the rest of the row (a percentage width), the boxes given a width in pixels grow with the page
+ * (legacyWidth) and keep that width, and the filling box takes up the difference, so the columns line up and a date box shows its whole date. Labels keep
+ * their width. A row with a single box grows the same way; a row of several fixed boxes and no filling box (often a cell of a grid) keeps its set sizes.
+ */
 export function LegacyRow({ label, w = 100, children, sx }: { label: string; w?: number; children: ReactNode; sx?: SxProps<Theme> }) {
+  const filled = Children.toArray(children).some((c) => typeof width(c) === 'string' && String(width(c)).endsWith('%'))
+  const lone = Children.toArray(children).length === 1
+  const boxes = Children.map(children, (c) => {
+    const n = width(c)
+    if (!(filled || lone) || typeof n !== 'number' || (isValidElement(c) && c.type === Typography)) return c
+    return cloneElement(c as Sized, { sx: { ...(c as Sized).props.sx, width: legacyWidth(n), ...(filled ? { flexShrink: 0 } : { maxWidth: '100%' }) } as Sized['props']['sx'] })
+  })
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minHeight: 32, ...sx }}>
-      <Typography sx={{ width: w, flexShrink: 0, fontSize: 13 }}>{label}</Typography>{children}
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minHeight: 32, '& > .MuiTypography-root': { color: 'text.secondary', fontWeight: 500, lineHeight: 1.25 }, ...sx }}>
+      <Typography sx={{ width: w, flexShrink: 0, fontSize: 13, fontWeight: 500, lineHeight: 1.25, color: 'text.secondary' }}>{label}</Typography>{boxes}
     </Box>
   )
 }
@@ -30,8 +50,8 @@ export function LegacyRow({ label, w = 100, children, sx }: { label: string; w?:
 /** A bordered frame with an optional caption. */
 export function LegacyFrame({ title, children, sx }: { title?: string; children: ReactNode; sx?: SxProps<Theme> }) {
   return (
-    <Paper variant="outlined" sx={{ p: 1, display: 'grid', gap: 0.5, alignContent: 'start', ...sx }}>
-      {title && <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{title}</Typography>}
+    <Paper variant="outlined" sx={{ p: 1.25, display: 'grid', gap: 0.5, alignContent: 'start', borderRadius: 1.5, ...sx }}>
+      {title && <Typography sx={{ fontSize: 12, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: 'primary.main', pb: 0.5, mb: 0.25, borderBottom: 1, borderColor: 'divider' }}>{title}</Typography>}
       {children}
     </Paper>
   )

@@ -1,5 +1,5 @@
 ﻿import { describe, expect, it } from 'vitest'
-import { dateBoxWidth, isoDate, maskDmy, toDmy, toIso } from './dates'
+import { isoDate, maskDmy, toDmy, toIso } from './dates'
 
 describe('dd/mm/yyyy dates', () => {
   it('converts both ways and rejects impossible dates', () => {
@@ -18,10 +18,6 @@ describe('dd/mm/yyyy dates', () => {
     expect(isoDate('13/06/2016')).toBe('2016-06-13')
     expect(toDmy(null)).toBe('')
     expect(toDmy('not a date')).toBe('')
-  })
-  it('keeps date boxes wide enough only when they hold a date', () => {
-    expect(dateBoxWidth('13/06/2016')).toBe(92)
-    expect(dateBoxWidth('ABC')).toBeUndefined()
   })
   it('masks typed digits', () => {
     expect(maskDmy('0102')).toBe('01/02/')
