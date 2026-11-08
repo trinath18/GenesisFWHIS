@@ -47,6 +47,23 @@ export function LegacyRow({ label, w = 100, children, sx }: { label: string; w?:
   )
 }
 
+/** A field caption of a legacy form, on one line; a caption too long for its column ends in "…" and shows in full on hover. */
+export function LegacyLabel({ children }: { children: string }) {
+  return <Typography noWrap title={children} sx={{ fontSize: 13, fontWeight: 500, lineHeight: 1.25, color: 'text.secondary', minWidth: 0 }}>{children}</Typography>
+}
+
+/**
+ * Captions and boxes laid out on a grid, so every column lines up row to row whatever the page width. `columns` alternates caption and box columns,
+ * e.g. '96px minmax(108px, 150px) 100px minmax(0, 1fr)'; on a narrow screen (below `sm`) it falls back to one caption and one box per line.
+ */
+export function LegacyGrid({ columns, narrow = '96px minmax(0, 1fr)', children, sx }: { columns: string; narrow?: string; children: ReactNode; sx?: SxProps<Theme> }) {
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: narrow, sm: columns }, columnGap: 1, rowGap: 0.75, alignItems: 'center', alignContent: 'start', ...sx }}>
+      {children}
+    </Box>
+  )
+}
+
 /** A bordered frame with an optional caption. */
 export function LegacyFrame({ title, children, sx }: { title?: string; children: ReactNode; sx?: SxProps<Theme> }) {
   return (

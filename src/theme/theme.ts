@@ -9,6 +9,8 @@ export interface LegacyPalette {
   readOnly: string
   /** The cyan read-only boxes (Invoice Processing). */
   readOnlyAlt: string
+  /** Any other box the user cannot change, greyed like a disabled box of the legacy forms. */
+  locked: string
   /** Red emphasised labels ("TOTAL RECORDS", "Records"). */
   emphasis: string
   /** A cell the user has typed into (worksheet grid). */
@@ -48,6 +50,7 @@ export function createAppTheme(mode: PaletteMode, colorTheme: ColorThemeId): The
     titleBarText: '#ffffff',
     readOnly: dark ? 'rgba(250, 204, 21, 0.14)' : '#fff8c5',
     readOnlyAlt: dark ? 'rgba(34, 211, 238, 0.14)' : '#d3f5fb',
+    locked: dark ? 'rgba(255, 255, 255, 0.1)' : '#eef1f5',
     emphasis: dark ? '#ff8a80' : '#c62828',
     highlight: dark ? 'rgba(251, 146, 60, 0.22)' : '#ffe0b2',
     dangerRow: dark ? 'rgba(244, 67, 54, 0.16)' : '#fdecea',
@@ -141,6 +144,10 @@ export function createAppTheme(mode: PaletteMode, colorTheme: ColorThemeId): The
             '&.Mui-focused': { boxShadow: focusRing },
             '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderWidth: 1 },
             '&.Mui-disabled': { backgroundColor: dark ? alpha('#fff', 0.02) : alpha(p.text.primary, 0.03) },
+            // A box the user cannot change is grey, so it does not look like one to type in. The yellow and cyan boxes set their own colour.
+            '&.MuiInputBase-readOnly': { backgroundColor: legacy.locked },
+            '&.MuiInputBase-readOnly.Mui-focused': { boxShadow: 'none' },
+            '&.MuiInputBase-readOnly:hover:not(.Mui-disabled):not(.Mui-focused) .MuiOutlinedInput-notchedOutline': { borderColor: dark ? alpha('#fff', 0.18) : alpha('#0f172a', 0.2) },
           },
           notchedOutline: { borderColor: dark ? alpha('#fff', 0.18) : alpha('#0f172a', 0.2) },
         },

@@ -3,7 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { membershipApi, type MemberDetail } from '../../api/membership'
-import { LegacyFrame, LegacyRow as L, LegacyTitle } from '../../components/LegacyForm'
+import { LegacyFrame, LegacyGrid, LegacyLabel as C, LegacyRow as L, LegacyTitle } from '../../components/LegacyForm'
 import { legacyBox as box, legacyYellow as yellow } from '../../components/legacyStyles'
 import { download, safeFileName } from '../../lib/download'
 import { formatDate, formatMoney } from '../../lib/format'
@@ -11,7 +11,7 @@ import { MemberDetailView } from './MemberDetailView'
 
 const MIN_LENGTH = 3
 const valid = /^[A-Za-z0-9*\- ]+$/
-const ro = (v: string | number | null | undefined, w: number | string = '100%', sx: object = box) => <TextField size="small" sx={{ ...sx, width: w }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
+const ro = (v: string | number | null | undefined, w: number | string = '100%', sx: object = box) => <TextField size="small" sx={{ ...sx, width: w, minWidth: 0 }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
 
 /** The Search button: members whose number starts with what is typed. */
 function MemberSearchDialog({ open, onClose, onPick }: { open: boolean; onClose: () => void; onPick: (number: string) => void }) {
@@ -135,17 +135,17 @@ export function EnquiryPage() {
         {m?.reinstated && <Typography sx={{ fontSize: 13, color: 'warning.main' }}>Reinstated</Typography>}
       </Paper>
 
-      <Paper variant="outlined" sx={{ p: 1, display: 'grid', gap: 1, gridTemplateColumns: { xs: '1fr', lg: '1.5fr 1fr' } }}>
-        <Box>
-          <L label="Salutation" w={75}>{ro(m?.others?.salutation, 90)}<Typography sx={{ fontSize: 13, width: 75, ml: 1 }}>Mem Name</Typography>{ro(m?.name)}</L>
-          <L label="Payor" w={75}>{ro(m?.payorCode, 90)}<Typography sx={{ fontSize: 13, width: 75, ml: 1 }}>Policy Num</Typography>{ro(m?.policyNo)}</L>
-          <L label="" w={75}><Box sx={{ width: 90 }} /><Typography sx={{ fontSize: 13, width: 75, ml: 1 }}>IC Num</Typography>{ro(m?.icBcPp)}</L>
-        </Box>
-        <Box>
-          <L label="Ann Bal Lmt" w={100}>{ro(m ? (m.annualLimitApplies ? formatMoney(m.availableLimit) : 'FULL') : '', 140)}{m?.topUp && <Typography sx={{ fontSize: 13, ml: 1 }}>Top-up</Typography>}</L>
-          <L label="H&C" w={100}>{ro(m?.others?.hospitalClinic, 60)}<Typography sx={{ fontSize: 13, ml: 1, width: 110 }}>TopUp Join Date</Typography>{ro(m?.others?.topUpJoinDate ? formatDate(m.others.topUpJoinDate) : '', 120)}</L>
-          <L label="Per Disability" w={100}>{ro(m?.planMajorMedical == null ? '' : m.planMajorMedical ? 'Major medical' : '-', 140)}</L>
-        </Box>
+      <Paper variant="outlined" sx={{ p: 1, display: 'grid', gap: { xs: 1, lg: 3 }, gridTemplateColumns: { xs: '1fr', lg: '1.5fr 1fr' } }}>
+        <LegacyGrid columns="84px minmax(90px, 130px) 84px minmax(0, 1fr)" narrow="84px minmax(0, 1fr)">
+          <C>Salutation</C>{ro(m?.others?.salutation)}<C>Mem Name</C>{ro(m?.name)}
+          <C>Payor</C>{ro(m?.payorCode)}<C>Policy Num</C>{ro(m?.policyNo)}
+          <Box sx={{ gridColumn: { xs: 'auto', sm: 'span 2' }, display: { xs: 'none', sm: 'block' } }} /><C>IC Num</C>{ro(m?.icBcPp)}
+        </LegacyGrid>
+        <LegacyGrid columns="100px minmax(108px, 150px) 112px minmax(108px, 150px)" narrow="112px minmax(0, 1fr)" sx={{ justifyContent: 'start' }}>
+          <C>Ann Bal Lmt</C>{ro(m ? (m.annualLimitApplies ? formatMoney(m.availableLimit) : 'FULL') : '')}{m?.topUp ? <Typography sx={{ fontSize: 13, gridColumn: 'span 2' }}>Top-up</Typography> : <Box sx={{ gridColumn: 'span 2', display: { xs: 'none', sm: 'block' } }} />}
+          <C>H&C</C>{ro(m?.others?.hospitalClinic)}<C>TopUp Join Date</C>{ro(m?.others?.topUpJoinDate ? formatDate(m.others.topUpJoinDate) : '')}
+          <C>Per Disability</C>{ro(m?.planMajorMedical == null ? '' : m.planMajorMedical ? 'Major medical' : '-')}
+        </LegacyGrid>
       </Paper>
 
       <Paper variant="outlined">

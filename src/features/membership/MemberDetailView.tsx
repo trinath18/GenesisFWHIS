@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { membershipApi, type MemberDetail } from '../../api/membership'
-import { LegacyFrame, LegacyRow as L } from '../../components/LegacyForm'
+import { LegacyFrame, LegacyGrid, LegacyLabel as C, LegacyRow as L } from '../../components/LegacyForm'
 import { legacyBox as box } from '../../components/legacyStyles'
 import { formatDate, formatMoney } from '../../lib/format'
 import {
@@ -17,8 +17,8 @@ const tabs = [
 ] as const
 type TabName = (typeof tabs)[number]
 
-const R = ({ v, w, multiline }: { v: string | number | null | undefined; w?: number | string; multiline?: boolean }) => (
-  <TextField size="small" sx={{ ...box, width: w ?? '100%' }} value={v ?? ''} multiline={multiline} minRows={multiline ? 4 : undefined} slotProps={{ input: { readOnly: true } }} />
+const R = ({ v, w, multiline, span }: { v: string | number | null | undefined; w?: number | string; multiline?: boolean; span?: boolean }) => (
+  <TextField size="small" sx={{ ...box, width: w ?? '100%', minWidth: 0, ...(span ? { gridColumn: '2 / -1' } : {}) }} value={v ?? ''} multiline={multiline} minRows={multiline ? 4 : undefined} slotProps={{ input: { readOnly: true } }} />
 )
 const t = (label: string, w = 95) => <Typography sx={{ fontSize: 13, width: w, flexShrink: 0, ml: 1 }}>{label}</Typography>
 const d = (v: string | null | undefined) => (v ? formatDate(v) : '')
@@ -32,31 +32,31 @@ function PrinDetailTab({ m }: { m: MemberDetail }) {
   const notes = (list: { memberNumber: string; text: string | null }[] | undefined) => (list ?? []).map((n) => `${n.memberNumber} - ${n.text ?? ''}`).join('\n\n')
   return (
     <Box sx={{ display: 'grid', gap: 1 }}>
-      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', lg: '1.2fr 1fr' } }}>
-        <Box>
-          <L label="Address" w={85}><R v={m.address1} /></L>
-          <L label="" w={85}><R v={m.address2} /></L>
-          <L label="" w={85}><R v={[m.address3, m.address4].filter(Boolean).join(', ')} /></L>
-          <L label="PostCode" w={85}><R v={m.postCode} w={110} />{t('City/Town', 75)}<R v={m.city} /></L>
-          <L label="State" w={85}><R v={m.state} /></L>
-          <L label="Sex" w={85}><R v={m.sex} w={110} />{t('TakeOver', 75)}<R v={takeOver(m.takeover)} /></L>
-          <L label="Birthdate" w={85}><R v={d(m.dateOfBirth)} w={110} />{t('Marital Status', 75)}<R v={o?.maritalStatus} /></L>
-          <L label="Race" w={85}><R v={m.raceCode} w={110} />{t('Nationality', 75)}<R v={o?.nationality} /></L>
-          <L label="Mem Type" w={85}><R v={m.memberType} w={110} />{t('Agent Code', 75)}<R v={o?.agentCode} /></L>
-          <L label="Renewal" w={85}><R v={m.renewFlag} w={110} />{t('Age Band', 75)}<R v={m.ageCode} /></L>
-          <L label="Gua. Renewal" w={85}><R v={o?.guaranteedRenewal} w={110} />{t('Branch', 75)}<R v={o?.branch ?? m.branchCode} /></L>
-        </Box>
-        <Box>
-          <L label="Ins Type" w={110}><R v={m.insurerCode} w={110} />{t('Plan Code', 70)}<R v={m.planCode} /></L>
-          <L label="Eff Date" w={110}><R v={d(m.payorEffDate)} w={110} />{t('Exp Date', 70)}<R v={d(m.payorExpDate)} /></L>
-          <L label="Bordx. Date" w={110}><R v={d(m.bordxDate)} w={110} />{t('Batch Num', 70)}<R v={m.batchNo} /></L>
-          <L label="Date Fr. Insurer" w={110}><R v={d(m.payorSubmissionDate)} w={110} />{t('DOR', 70)}<R v={d(m.valueDate)} /></L>
-          <L label="E'yee Num" w={110}><R v={o?.employeeNo} /></L>
-          <L label="Endt Eff Date" w={110}><R v={d(m.endorsementDate)} w={110} />{t('Payor Endt', 70)}<R v={m.endorseType} /></L>
-          <L label="Group Company" w={110}><R v={m.groupCompany} /></L>
-          <L label="Final Expiry" w={110}><R v={d(m.finalExpiryDate)} w={110} />{t('Policy Year', 70)}<R v={m.policyYear} /></L>
-          <L label="Adult/Child" w={110}><R v={m.adultChild} w={110} />{t('Cancel Date', 70)}<R v={d(o?.cancelDate)} /></L>
-        </Box>
+      <Box sx={{ display: 'grid', gap: { xs: 1, lg: 3 }, gridTemplateColumns: { xs: '1fr', lg: '1.15fr 1fr' } }}>
+        <LegacyGrid columns="96px minmax(100px, 150px) 100px minmax(100px, 1fr)">
+          <C>Address</C><R v={m.address1} span />
+          <span /><R v={m.address2} span />
+          <span /><R v={[m.address3, m.address4].filter(Boolean).join(', ')} span />
+          <C>PostCode</C><R v={m.postCode} /><C>City/Town</C><R v={m.city} />
+          <C>State</C><R v={m.state} span />
+          <C>Sex</C><R v={m.sex} /><C>TakeOver</C><R v={takeOver(m.takeover)} />
+          <C>Birthdate</C><R v={d(m.dateOfBirth)} /><C>Marital Status</C><R v={o?.maritalStatus} />
+          <C>Race</C><R v={m.raceCode} /><C>Nationality</C><R v={o?.nationality} />
+          <C>Mem Type</C><R v={m.memberType} /><C>Agent Code</C><R v={o?.agentCode} />
+          <C>Renewal</C><R v={m.renewFlag} /><C>Age Band</C><R v={m.ageCode} />
+          <C>Gua. Renewal</C><R v={o?.guaranteedRenewal} /><C>Branch</C><R v={o?.branch ?? m.branchCode} />
+        </LegacyGrid>
+        <LegacyGrid columns="112px minmax(100px, 140px) 84px minmax(100px, 1fr)" narrow="112px minmax(0, 1fr)">
+          <C>Ins Type</C><R v={m.insurerCode} /><C>Plan Code</C><R v={m.planCode} />
+          <C>Eff Date</C><R v={d(m.payorEffDate)} /><C>Exp Date</C><R v={d(m.payorExpDate)} />
+          <C>Bordx. Date</C><R v={d(m.bordxDate)} /><C>Batch Num</C><R v={m.batchNo} />
+          <C>Date Fr. Insurer</C><R v={d(m.payorSubmissionDate)} /><C>DOR</C><R v={d(m.valueDate)} />
+          <C>E'yee Num</C><R v={o?.employeeNo} span />
+          <C>Endt Eff Date</C><R v={d(m.endorsementDate)} /><C>Payor Endt</C><R v={m.endorseType} />
+          <C>Group Company</C><R v={m.groupCompany} span />
+          <C>Final Expiry</C><R v={d(m.finalExpiryDate)} /><C>Policy Year</C><R v={m.policyYear} />
+          <C>Adult/Child</C><R v={m.adultChild} /><C>Cancel Date</C><R v={d(o?.cancelDate)} />
+        </LegacyGrid>
       </Box>
       <Box sx={{ display: 'grid', gap: 1, gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr 1fr' } }}>
         <LegacyFrame title="Principal Warranty"><R v={notes(exclusions.data)} multiline /></LegacyFrame>
