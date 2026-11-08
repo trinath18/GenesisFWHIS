@@ -2,7 +2,9 @@
 import type { HealthPlan } from './deletion'
 
 export interface RegistrationPayor { code: string; name: string | null; health: string | null }
-export interface RegistrationOptions { healthPlans: HealthPlan[]; payors: RegistrationPayor[] }
+export interface CodeOption { code: string; name: string | null }
+/** Lists of the form: cities and states by name (what MBM stores), races, nationalities and relationships by code. */
+export interface RegistrationOptions { healthPlans: HealthPlan[]; payors: RegistrationPayor[]; cities: string[]; states: string[]; races: CodeOption[]; nationalities: CodeOption[]; relationships: CodeOption[] }
 export interface RegistrationRequest {
   healthCode: string; payorCode: string; bordxDate: string | null; batchNo: number | null; renewal: string; previousMemberNo: string | null; previousPolicyNo: string | null; takeover: string
   name: string; salutation: string | null; icBcPp: string; dateOfBirth: string | null; sex: string; race: string | null; nationality: string | null

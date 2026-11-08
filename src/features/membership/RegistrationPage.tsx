@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, TextField, Typography } from '@mui/material'
+import { Alert, Autocomplete, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { registrationApi, type RegistrationQuote, type RegistrationRequest, type RegistrationSupplementary } from '../../api/registration'
@@ -82,9 +82,18 @@ export function RegistrationPage() {
   const Sel = (k: keyof Form, items: [string, string][], w: number | string = '100%') => (
     <TextField select size="small" sx={{ ...box, width: w }} value={f[k]} onChange={setField(k)}>{items.map(([c, l]) => <MenuItem key={c} value={c}>{l}</MenuItem>)}</TextField>
   )
+  /** Pick from the list or type a value, like the legacy editable combo boxes (City/Town, State). */
+  const Pick = (k: keyof Form, list: string[], max: number, required = false) => (
+    <Autocomplete freeSolo size="small" options={list} inputValue={f[k]} onInputChange={(_, v) => setField(k)({ target: { value: v.toUpperCase().slice(0, max) } })} sx={{ width: '100%', minWidth: 0 }}
+      renderInput={(p) => <TextField {...p} sx={box} required={required} placeholder="Pick or type" />} />
+  )
+  const codes = (list: { code: string; name: string | null }[] | undefined): [string, string][] => [['', ' '], ...(list ?? []).map((o): [string, string] => [o.code, `${o.code} - ${o.name ?? ''}`])]
   const D = (k: keyof Form) => <DateField sx={{ ...box, width: 140 }} value={f[k]} onChange={setDate(k)} />
   const ro = (v: string | number | null | undefined, w: number | string = '100%') => <TextField size="small" sx={{ ...box, width: w }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
   const t = (label: string, w = 85) => <Typography sx={{ fontSize: 13, width: w, flexShrink: 0, ml: 1 }}>{label}</Typography>
+  const ssel = (k: keyof Supp, label: string, items: [string, string][]) => (
+    <TextField select size="small" label={label} value={sf[k]} onChange={(e) => setSf((x) => ({ ...x, [k]: e.target.value }))}>{items.map(([c, l]) => <MenuItem key={c} value={c}>{l}</MenuItem>)}</TextField>
+  )
   const stext = (k: keyof Supp, label: string, max?: number) => <TextField size="small" label={label} value={sf[k]} onChange={(e) => setSf((x) => ({ ...x, [k]: e.target.value }))} slotProps={{ htmlInput: { maxLength: max } }} />
   const grid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 1.5 } as const
 
@@ -140,11 +149,11 @@ export function RegistrationPage() {
               <L label="Address" w={85}>{T('a1', 50, { required: true })}</L>
               <L label="" w={85}>{T('a2', 50)}</L>
               <L label="" w={85}>{T('a3', 50)}</L>
-              <L label="PostCode" w={85}><Box sx={{ width: 110, flexShrink: 0 }}>{T('post', 6, { required: true })}</Box>{t('City/Town')}{T('city', 50)}</L>
-              <L label="State" w={85}>{T('state', 50, { required: true })}</L>
+              <L label="PostCode" w={85}><Box sx={{ width: 110, flexShrink: 0 }}>{T('post', 6, { required: true })}</Box>{t('City/Town')}{Pick('city', options.data?.cities ?? [], 50)}</L>
+              <L label="State" w={85}>{Pick('state', options.data?.states ?? [], 50, true)}</L>
               <L label="Sex (M/F)" w={85}>{Sel('sex', [['M', 'M - Male'], ['F', 'F - Female']], 110)}{t('Take Over')}{Sel('takeover', [['N', 'N - None'], ['Y', 'Y - Take Over'], ['C', 'C - Conversion']])}</L>
-              <L label="Birthdate" w={85}>{D('dob')}{t('Marital Status')}{T('marital', 1)}</L>
-              <L label="Race" w={85}><Box sx={{ width: 110, flexShrink: 0 }}>{T('race', 2)}</Box>{t('Nationality')}{T('nationality', 2)}</L>
+              <L label="Birthdate" w={85}>{D('dob')}{t('Marital Status')}{Sel('marital', [['', ' '], ['S', 'S - Single'], ['M', 'M - Married']])}</L>
+              <L label="Race" w={85}>{Sel('race', codes(options.data?.races), 130)}{t('Nationality')}{Sel('nationality', codes(options.data?.nationalities))}</L>
               <L label="Branch" w={85}>{T('branch', 100)}</L>
               <L label="Agent" w={85}>{T('agent', 30)}</L>
               <L label="Age Band" w={85}>{ro(quote ? `${quote.ageCode} (${quote.ageText})` : '', 110)}{t('Instl mode')}{Sel('installment', [['A', 'A - Annual'], ['Q', 'Q - Quarterly'], ['S', 'S - Semi Annual'], ['M', 'M - Monthly']])}</L>
@@ -166,10 +175,10 @@ export function RegistrationPage() {
         <Box sx={{ p: 2, display: 'grid', gap: 2 }} hidden={tab !== 1}>
           {!insurerOk && <Alert severity="info">Supplementary persons can be added when the Ins Type is F or H (enter it on the Principal Details tab).</Alert>}
           <Box sx={grid}>
-            {stext('salutation', 'Covered salutation', 5)}{stext('name', 'Covered name', 60)}{stext('ic', 'Covered IC / passport', 30)}
+            {ssel('salutation', 'Covered salutation', ['', 'MR', 'MS', 'MDM', 'MRS'].map((v): [string, string] => [v, v || ' ']))}{stext('name', 'Covered name', 60)}{stext('ic', 'Covered IC / passport', 30)}
             <DateField label="Covered birth date" value={sf.dob} onChange={(iso) => setSf((x) => ({ ...x, dob: iso }))} />
             <TextField select size="small" label="Covered sex" value={sf.sex} onChange={(e) => setSf((x) => ({ ...x, sex: e.target.value }))}><MenuItem value="M">M - Male</MenuItem><MenuItem value="F">F - Female</MenuItem></TextField>
-            {stext('rel', 'Relationship code', 1)}{stext('allergies', 'Covered allergies', 500)}{stext('exclusion', 'Covered exclusion', 4000)}{stext('plan', 'Supplementary plan (if different)', 4)}
+            {ssel('rel', 'Relationship', codes(options.data?.relationships))}{stext('allergies', 'Covered allergies', 500)}{stext('exclusion', 'Covered exclusion', 4000)}{stext('plan', 'Supplementary plan (if different)', 4)}
             <DateField label="Supplementary effective date" value={sf.eff} onChange={(iso) => setSf((x) => ({ ...x, eff: iso }))} /><DateField label="Supplementary expiry date" value={sf.exp} onChange={(iso) => setSf((x) => ({ ...x, exp: iso }))} />
             {stext('renew', 'Renewal discount %')}{stext('policy', 'Policy discount %')}
           </Box>
