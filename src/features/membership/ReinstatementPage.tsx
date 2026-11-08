@@ -5,6 +5,7 @@ import { reinstatementApi, type ReinstatementMember, type ReinstatementQuote } f
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { Field, FieldGrid } from '../../components/DataTables'
 import { formatDate, formatMoney } from '../../lib/format'
+import { DateInput } from '../../components/DateField'
 
 /** Legacy: Membership > Member Reinstatement. Re-activates a cancelled member; premium and MCO fee are calculated by the server from the rate tables. */
 export function ReinstatementPage() {
@@ -57,8 +58,8 @@ export function ReinstatementPage() {
           </FieldGrid>
           {member.canReinstate && (
             <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
-              <TextField size="small" type="date" label="Endorsement bordx date" value={bordx} onChange={(e) => { setBordx(e.target.value); setQuote(null) }} slotProps={{ inputLabel: { shrink: true } }} />
-              <TextField size="small" type="date" label="Reinstate date" value={date} onChange={(e) => { setDate(e.target.value); setQuote(null) }} slotProps={{ inputLabel: { shrink: true } }} />
+              <DateInput label="Endorsement bordx date" value={bordx} onChange={(e) => { setBordx(e.target.value); setQuote(null) }} />
+              <DateInput label="Reinstate date" value={date} onChange={(e) => { setDate(e.target.value); setQuote(null) }} />
               <TextField size="small" type="number" label="Batch no" value={batch} onChange={(e) => { setBatch(e.target.value); setQuote(null) }} sx={{ width: 120 }} />
               <Button variant="outlined" disabled={price.isPending} onClick={() => { setMessage(null); price.mutate() }}>Calculate fees</Button>
             </Box>

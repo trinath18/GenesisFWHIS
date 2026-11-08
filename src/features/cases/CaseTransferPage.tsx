@@ -5,10 +5,10 @@ import { useNavigate } from 'react-router-dom'
 import { caseTransferApi, type CaseTransferParty } from '../../api/caseTransfers'
 import { LegacyFrame, LegacyRow as L, LegacyTitle } from '../../components/LegacyForm'
 import { legacyBox as box, legacyYellow as yellow } from '../../components/legacyStyles'
-import { toDmy } from '../../lib/dates'
+import { toDmy, dateBoxWidth } from '../../lib/dates'
 
 const statusName: Record<string, string> = { A: 'A - Active', C: 'C - Cancel', D: 'D - Delete' }
-const ro = (v: string | null | undefined, w: number | string = '100%') => <TextField size="small" sx={{ ...box, width: w }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
+const ro = (v: string | null | undefined, w: number | string = '100%') => <TextField size="small" sx={{ ...box, width: w, minWidth: dateBoxWidth(v) }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
 
 /**
  * One member frame of the legacy form: Member No. (Transfer No.) and Cov ID, Policy No. and Pol Status, IC No. and Eff Date, Patient and Exp Date. The

@@ -10,6 +10,7 @@ import { download } from '../../lib/download'
 import { CaseDetailView } from './CaseDetailView'
 import { CaseInquirySearchDialog } from './CaseInquirySearchDialog'
 import { claimabilityLabels, statusLabels, withLabel, yesNo } from './labels'
+import { dateBoxWidth } from '../../lib/dates'
 
 /** The legacy form enables "print payments" only with USRAccess position 178. */
 const PAYMENT_PRINT_POSITION = 178
@@ -47,7 +48,7 @@ export function CaseInquiryPage() {
     setMessage(null)
     try { download(await casesApi.print(selected!, kind), `case-${selected}-${name}`) } catch (e) { setMessage((e as Error).message) }
   }
-  const ro = (v: string | null | undefined, w: number | string = '100%', sx = box) => <TextField size="small" sx={{ ...sx, width: w }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
+  const ro = (v: string | null | undefined, w: number | string = '100%', sx = box) => <TextField size="small" sx={{ ...sx, width: w, minWidth: dateBoxWidth(v) }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: 1 }}>

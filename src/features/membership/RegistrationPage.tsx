@@ -7,7 +7,7 @@ import { DateField } from '../../components/DateField'
 import { LegacyFrame, LegacyRow as L, LegacyTitle } from '../../components/LegacyForm'
 import { legacyBox } from '../../components/legacyStyles'
 import { formatDate, formatMoney } from '../../lib/format'
-import { toDmy } from '../../lib/dates'
+import { toDmy, dateBoxWidth } from '../../lib/dates'
 
 type Form = Record<'renewal' | 'prevMem' | 'prevPol' | 'takeover' | 'name' | 'salutation' | 'ic' | 'dob' | 'sex' | 'race' | 'nationality' | 'a1' | 'a2' | 'a3' | 'city' | 'state' | 'post'
   | 'email' | 'telH' | 'telM' | 'telO' | 'insurer' | 'plan' | 'policy' | 'eff' | 'exp' | 'group' | 'employee' | 'agent' | 'dept' | 'branch' | 'installment' | 'occupation' | 'work' | 'marital' | 'allergies' | 'exclusion' | 'remarks', string>
@@ -83,7 +83,7 @@ export function RegistrationPage() {
     <TextField select size="small" sx={{ ...box, width: w }} value={f[k]} onChange={setField(k)}>{items.map(([c, l]) => <MenuItem key={c} value={c}>{l}</MenuItem>)}</TextField>
   )
   const D = (k: keyof Form) => <DateField sx={{ ...box, width: 140 }} value={f[k]} onChange={setDate(k)} />
-  const ro = (v: string | number | null | undefined, w: number | string = '100%') => <TextField size="small" sx={{ ...box, width: w }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
+  const ro = (v: string | number | null | undefined, w: number | string = '100%') => <TextField size="small" sx={{ ...box, width: w, minWidth: dateBoxWidth(v) }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
   const t = (label: string, w = 85) => <Typography sx={{ fontSize: 13, width: w, flexShrink: 0, ml: 1 }}>{label}</Typography>
   const stext = (k: keyof Supp, label: string, max?: number) => <TextField size="small" label={label} value={sf[k]} onChange={(e) => setSf((x) => ({ ...x, [k]: e.target.value }))} slotProps={{ htmlInput: { maxLength: max } }} />
   const grid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 1.5 } as const

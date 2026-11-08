@@ -1,9 +1,10 @@
-﻿import { Alert, Box, Button, TextField, Typography } from '@mui/material'
+﻿import { Alert, Box, Button, Typography } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { validDatesApi, type ValidDateRanges } from '../../api/validDates'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { formatDate } from '../../lib/format'
+import { DateInput } from '../../components/DateField'
 
 const empty: ValidDateRanges = { effectiveStart: null, effectiveEnd: null, expiryStart: null, expiryEnd: null, birthStart: null, birthEnd: null }
 const groups: { title: string; start: keyof ValidDateRanges; end: keyof ValidDateRanges }[] = [
@@ -40,8 +41,8 @@ function ValidDatesForm({ initial }: { initial: ValidDateRanges }) {
       <Box sx={{ display: 'grid', gap: 2, maxWidth: 520 }}>
         {groups.map((g) => (
           <Box key={g.title} sx={{ display: 'flex', gap: 2 }}>
-            <TextField size="small" type="date" label={`${g.title} - start`} value={(values[g.start] as string | null) ?? ''} onChange={set(g.start)} slotProps={{ inputLabel: { shrink: true } }} />
-            <TextField size="small" type="date" label="end" value={(values[g.end] as string | null) ?? ''} onChange={set(g.end)} slotProps={{ inputLabel: { shrink: true } }} />
+            <DateInput label={`${g.title} - start`} value={(values[g.start] as string | null) ?? ''} onChange={set(g.start)} />
+            <DateInput label="end" value={(values[g.end] as string | null) ?? ''} onChange={set(g.end)} />
           </Box>
         ))}
         {values.updatedBy && <Typography variant="caption" color="text.secondary">Last updated by {values.updatedBy} on {formatDate(values.updatedOn)}</Typography>}

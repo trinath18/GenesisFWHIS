@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { mcoPendingApi, type McoPendingCriteria } from '../../api/mcoPending'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { formatDate } from '../../lib/format'
+import { DateInput } from '../../components/DateField'
 
 const empty: McoPendingCriteria = { memberFrom: '', memberTo: '', bordxFrom: '', bordxTo: '', status: '' }
 const statusLabel: Record<string, string> = { B: 'Billed', P: 'Pending', R: 'Release' }
@@ -33,8 +34,8 @@ export function McoPendingPage() {
       <Box component="form" onSubmit={(e) => { e.preventDefault(); setMessage(null); setSelected(new Set()); setApplied({ ...criteria }) }} sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
         <TextField size="small" label="Member no from" value={criteria.memberFrom} onChange={set('memberFrom')} />
         <TextField size="small" label="Member no to" value={criteria.memberTo} onChange={set('memberTo')} />
-        <TextField size="small" type="date" label="Bordx date from" value={criteria.bordxFrom} onChange={set('bordxFrom')} slotProps={{ inputLabel: { shrink: true } }} />
-        <TextField size="small" type="date" label="Bordx date to" value={criteria.bordxTo} onChange={set('bordxTo')} slotProps={{ inputLabel: { shrink: true } }} />
+        <DateInput label="Bordx date from" value={criteria.bordxFrom} onChange={set('bordxFrom')} />
+        <DateInput label="Bordx date to" value={criteria.bordxTo} onChange={set('bordxTo')} />
         <TextField select size="small" label="Status" value={criteria.status} onChange={set('status')} sx={{ width: 160 }}>
           <MenuItem value="">(any)</MenuItem>{Object.entries(statusLabel).map(([v, l]) => <MenuItem key={v} value={v}>{v} - {l}</MenuItem>)}
         </TextField>

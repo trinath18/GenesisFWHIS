@@ -1,5 +1,6 @@
 ﻿import { Box, MenuItem, TextField } from '@mui/material'
 import type { TrackingFilterDef, TrackingFilters } from '../api/tracking'
+import { DateInput } from './DateField'
 
 /** One input per filter, chosen from the filter kind sent by the API. Ranges use `<key>.from` / `<key>.to`. */
 export function FilterInput({ f, values, onChange }: { f: TrackingFilterDef; values: TrackingFilters; onChange: (key: string, value: string) => void }) {
@@ -7,8 +8,8 @@ export function FilterInput({ f, values, onChange }: { f: TrackingFilterDef; val
   if (f.kind === 'DateRange') {
     return (
       <Box sx={{ display: 'flex', gap: 1 }}>
-        <TextField size="small" type="date" label={`${f.label} from`} value={values[`${f.key}.from`] ?? ''} onChange={set(`${f.key}.from`)} slotProps={{ inputLabel: { shrink: true } }} />
-        <TextField size="small" type="date" label="to" value={values[`${f.key}.to`] ?? ''} onChange={set(`${f.key}.to`)} slotProps={{ inputLabel: { shrink: true } }} />
+        <DateInput label={`${f.label} from`} value={values[`${f.key}.from`] ?? ''} onChange={set(`${f.key}.from`)} />
+        <DateInput label="to" value={values[`${f.key}.to`] ?? ''} onChange={set(`${f.key}.to`)} />
       </Box>
     )
   }

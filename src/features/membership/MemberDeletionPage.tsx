@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { deletionApi, type DeletionCriteria } from '../../api/deletion'
 import { suspensionApi } from '../../api/suspensions'
 import { formatDate } from '../../lib/format'
+import { DateInput } from '../../components/DateField'
 
 const options = [{ value: 'D', label: 'D - Bordx date' }, { value: 'B', label: 'B - Batch' }, { value: 'M', label: 'M - Membership' }]
 const empty: DeletionCriteria = { health: '', payor: '', option: '', bordxFrom: null, bordxTo: null, batchNo: null, memberFrom: null, memberTo: null }
@@ -47,8 +48,8 @@ export function MemberDeletionPage() {
         <TextField select required size="small" label="Select by" value={c.option} onChange={(e) => set('option', e.target.value)} sx={{ width: 180 }}>
           {options.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
         </TextField>
-        {(c.option === 'D' || c.option === 'B') && <TextField size="small" type="date" label={c.option === 'B' ? 'Receipt (bordx) date' : 'Bordx date from'} value={c.bordxFrom ?? ''} onChange={(e) => set('bordxFrom', e.target.value || null)} slotProps={{ inputLabel: { shrink: true } }} />}
-        {c.option === 'D' && <TextField size="small" type="date" label="Bordx date to" value={c.bordxTo ?? ''} onChange={(e) => set('bordxTo', e.target.value || null)} slotProps={{ inputLabel: { shrink: true } }} />}
+        {(c.option === 'D' || c.option === 'B') && <DateInput label={c.option === 'B' ? 'Receipt (bordx) date' : 'Bordx date from'} value={c.bordxFrom ?? ''} onChange={(e) => set('bordxFrom', e.target.value || null)} />}
+        {c.option === 'D' && <DateInput label="Bordx date to" value={c.bordxTo ?? ''} onChange={(e) => set('bordxTo', e.target.value || null)} />}
         {c.option === 'B' && <TextField size="small" type="number" label="Batch no" value={c.batchNo ?? ''} onChange={(e) => set('batchNo', e.target.value ? Number(e.target.value) : null)} sx={{ width: 120 }} />}
         {c.option === 'M' && <>
           <TextField size="small" label="Membership no from" value={c.memberFrom ?? ''} onChange={(e) => set('memberFrom', e.target.value || null)} />
