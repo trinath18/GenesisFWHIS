@@ -208,7 +208,7 @@ export function AdjustmentPage() {
                   <L label="" w={85}>{E('address2', 50)}</L>
                   <L label="" w={85}>{E('address3', 50)}</L>
                   <L label="PostCode" w={85}>{E('postCode', 6, 110)}{t('City/Town')}{Pick('city', lists.data?.cities, 50)}</L>
-                  <L label="State" w={85}>{Pick('state', lists.data?.states, 50)}</L>
+                  <L label="State" w={85}>{Code('state', plainItems(lists.data?.states ?? []))}</L>
                   <L label="Sex" w={85}>
                     <TextField select size="small" sx={{ ...box, width: 110 }} required value={form.sex} onChange={set('sex')}><MenuItem value="M">M - Male</MenuItem><MenuItem value="F">F - Female</MenuItem></TextField>
                     {t('TakeOver')}{ro(detail?.takeover)}

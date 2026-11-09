@@ -88,7 +88,7 @@ export function RegistrationPage() {
   const Pick = (k: keyof Form, list: string[] | undefined, max: number, required = false) => (
     <PickText value={f[k]} onChange={(v) => setField(k)({ target: { value: v } })} options={list ?? []} max={max} required={required} sx={{ width: '100%', minWidth: 0 }} inputSx={box} />
   )
-  const Code = (k: keyof Form, items: [string, string][], w: number | string = '100%') => <CodeSelect value={f[k]} onChange={(v) => setField(k)({ target: { value: v } })} items={items} sx={{ ...box, width: w }} />
+  const Code = (k: keyof Form, items: [string, string][], w: number | string = '100%', required = false) => <CodeSelect value={f[k]} onChange={(v) => setField(k)({ target: { value: v } })} items={items} required={required} sx={{ ...box, width: w }} />
   const D = (k: keyof Form) => <DateField sx={{ ...box, width: 140 }} value={f[k]} onChange={setDate(k)} />
   const ro = (v: string | number | null | undefined, w: number | string = '100%') => <TextField size="small" sx={{ ...box, width: w }} value={v ?? ''} slotProps={{ input: { readOnly: true } }} />
   const t = (label: string, w = 85) => <Typography sx={{ fontSize: 13, width: w, flexShrink: 0, ml: 1 }}>{label}</Typography>
@@ -149,7 +149,7 @@ export function RegistrationPage() {
               <L label="" w={85}>{T('a2', 50)}</L>
               <L label="" w={85}>{T('a3', 50)}</L>
               <L label="PostCode" w={85}><Box sx={{ width: 110, flexShrink: 0 }}>{T('post', 6, { required: true })}</Box>{t('City/Town')}{Pick('city', lists.data?.cities, 50)}</L>
-              <L label="State" w={85}>{Pick('state', lists.data?.states, 50, true)}</L>
+              <L label="State" w={85}>{Code('state', plainItems(lists.data?.states ?? []), '100%', true)}</L>
               <L label="Sex (M/F)" w={85}>{Sel('sex', [['M', 'M - Male'], ['F', 'F - Female']], 110)}{t('Take Over')}{Sel('takeover', [['N', 'N - None'], ['Y', 'Y - Take Over'], ['C', 'C - Conversion']])}</L>
               <L label="Birthdate" w={85}>{D('dob')}{t('Marital Status')}{Code('marital', MARITAL_STATUSES)}</L>
               <L label="Race" w={85}>{Code('race', codeItems(lists.data?.races), 130)}{t('Nationality')}{Code('nationality', codeItems(lists.data?.nationalities))}</L>
