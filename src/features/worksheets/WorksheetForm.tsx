@@ -13,7 +13,7 @@ import { CaseSearchDialog } from '../cases/CaseSearchDialog'
 import { WorksheetLegacyGrid } from './WorksheetLegacyGrid'
 import { legacyMoney, type WorksheetModel } from './worksheetModel'
 import { PickText } from '../../components/MemberFields'
-import { useMemberLists } from '../../lib/memberLists'
+import { stateCaption, useMemberLists } from '../../lib/memberLists'
 
 type Fields = Omit<WorksheetSaveRequest, 'expectedFinalApproved' | 'limitOverrides' | 'exGratia'>
 const empty: Fields = {
@@ -250,7 +250,7 @@ export function WorksheetForm({ screen, title, caseNo, setCaseNo, onGo, loading,
                 <TextField select size="small" fullWidth value={v.state ?? ''} disabled={!canSave} onChange={(e) => set({ state: e.target.value || null })}>
                   <MenuItem value=""><em>None</em></MenuItem>
                   {(options.data?.states ?? []).map((s) => <MenuItem key={s.code} value={s.code}>{s.name}</MenuItem>)}
-                  {v.state && !options.data?.states.some((s) => s.code === v.state) && <MenuItem value={v.state}>{v.state}</MenuItem>}
+                  {v.state && !options.data?.states.some((s) => s.code === v.state) && <MenuItem value={v.state}>{stateCaption(v.state)}</MenuItem>}
                 </TextField>
               </Row>
               <Row label="Last Doc."><DateField value={lastDoc ?? ''} disabled={!canSave} onChange={(iso) => set({ lastDocDate: iso || null })} /></Row>
